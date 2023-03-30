@@ -15,12 +15,10 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_core
   moveit_ros_planning
   moveit_ros_planning_interface
-  moveit_ros_perception
   geometry_msgs
   moveit_msgs
   sensor_msgs
   visualization_msgs
-  controller_msgs
   message_generation
 )
 
@@ -35,7 +33,7 @@ add_subdirectory (srv)
 #     catkin Setup
 #------------------------------------------------------------------------
 catkin_package(
-  CATKIN_DEPENDS message_runtime moveit_core moveit_ros_planning_interface roscpp rospy geometry_msgs moveit_msgs sensor_msgs visualization_msgs controller_msgs
+  CATKIN_DEPENDS message_runtime moveit_core moveit_ros_planning_interface roscpp rospy geometry_msgs moveit_msgs sensor_msgs visualization_msgs
   DEPENDS EIGEN3
 )
 include_directories(${catkin_INCLUDE_DIRS})
