@@ -1,0 +1,6 @@
+bool use_stored_robot_trajectory
+moveit_msgs/RobotTrajectory planned_trajectory
+
+---
+
+bool success

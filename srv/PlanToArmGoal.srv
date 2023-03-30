@@ -1,0 +1,12 @@
+int32 LEFT_ARM = 0
+int32 RIGHT_ARM = 1
+int32 ASSIGN_CLOSEST_ARM = 2
+
+int32 planning_group_arm
+bool collision_aware_planning
+geometry_msgs/Pose arm_goal_pose
+
+---
+
+bool success
+moveit_msgs/RobotTrajectory planned_trajectory
