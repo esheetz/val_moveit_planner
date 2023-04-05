@@ -13,40 +13,48 @@ const std::string MoveItPlannerExecutorServerNode::right_arm_planning_group = st
 MoveItPlannerExecutorServerNode::MoveItPlannerExecutorServerNode(const ros::NodeHandle& nh)
     : move_group_interface_larm_(left_arm_planning_group),
       move_group_interface_rarm_(right_arm_planning_group) {
-    
-    nh_ = nh;
 
-    // set up parameters
-    nh_.param("octomap_topic", octomap_topic_, std::string("occupied_cells_vis_array"));
-    nh_.param("ihmc_msg_interface_moveit_topic", ihmc_msg_interface_moveit_topic_, std::string("moveit_planned_robot_trajectory"));
+    ROS_INFO("[MoveIt Planner Executor Server Node] Constructed");
+
+    nh_ = nh;
 
     loop_rate_ = 10.0; // Hz
 
+    ihmc_msg_interface_recv_pub_counter_ = 5;
+
+    // set up parameters
+    nh_.param("ihmc_msg_interface_moveit_topic", ihmc_msg_interface_moveit_topic_, std::string("moveit_planned_robot_trajectory"));
+    nh_.param("ihmc_msg_interface_receive_moveit_traj_topic", ihmc_msg_interface_recv_moveit_traj_topic_, std::string("receive_moveit_trajectories"));
+
+    // initialize variables, connections, service clients
     initializeMoveItVariables();
-
-    initializeOctomapVariables();
-
     initializeConnections();
-
-    std::cout << "[MoveIt Planner Executor Server Node] Constructed" << std::endl;
+    initializeServiceClients();
 }
 
 MoveItPlannerExecutorServerNode::~MoveItPlannerExecutorServerNode() {
-    std::cout << "[MoveIt Planner Executor Server Node] Destroyed" << std::endl;
+    ROS_INFO("[MoveIt Planner Executor Server Node] Destroyed");
 }
 
 // CONNECTIONS
 bool MoveItPlannerExecutorServerNode::initializeConnections() {
-    if( volumetric_points_ ) {
-        octomap_subscriber_ = nh_.subscribe(octomap_topic_, 1, &MoveItPlannerExecutorServerNode::octomapObstaclesCallback, this);
-    }
-    else {
-        octomap_subscriber_ = nh_.subscribe(octomap_topic_, 1, &MoveItPlannerExecutorServerNode::octomapPointsCallback, this);
-    }
-
     ihmc_msg_interface_pub_ = nh_.advertise<moveit_msgs::RobotTrajectory>(ihmc_msg_interface_moveit_topic_, 1);
+    ihmc_msg_interface_recv_moveit_traj_pub_ = nh_.advertise<std_msgs::Bool>(ihmc_msg_interface_recv_moveit_traj_topic_, 1);
 
     return true;
+}
+
+// SERVICE CLIENTS
+void MoveItPlannerExecutorServerNode::initializeServiceClients() {
+    // create motion planning client
+    plan_kinematic_path_client_ = nh_.serviceClient<moveit_msgs::GetMotionPlan>("/plan_kinematic_path");
+    // block until service is advertised and available
+    plan_kinematic_path_client_.waitForExistence();
+
+    ROS_INFO("[MoveIt Planner Executor Server Node] Service /plan_kinematic_path exists!");
+    ROS_INFO("[MoveIt Planner Executor Server Node] Created motion planning client!");
+
+    return;
 }
 
 // ADVERTISE SERVICES
@@ -59,43 +67,21 @@ void MoveItPlannerExecutorServerNode::advertiseServices() {
     return;
 }
 
-// CALLBACKS
-void MoveItPlannerExecutorServerNode::octomapPointsCallback(const sensor_msgs::PointCloud2& msg) {
-    if( volumetric_points_ ) {
-        // ignore message
-        return;
-    }
-
-    // store message
-    point_cloud_ = msg;
-
-    markOctomapDataRecieved();
-
-    return;
-}
-
-void MoveItPlannerExecutorServerNode::octomapObstaclesCallback(const visualization_msgs::MarkerArray& msg) {
-    if( !volumetric_points_ ) {
-        // ignore message
-        return;
-    }
-
-    // store message
-    obstacles_ = msg;
-
-    markOctomapDataRecieved();
-
-    return;
-}
-
 // SERVICE CALLBACKS
 bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_executor::PlanToArmGoal::Request&  req,
                                                             val_moveit_planner_executor::PlanToArmGoal::Response& res) {
+    ROS_INFO("[MoveIt Planner Executor Server Node] Received new arm goal motion planning request");
+
     // ***** INITIALIZE VARIABLES *****
 
     // new planning request received; reset internally stored plan
     planned_trajectory_ = moveit_msgs::RobotTrajectory();
     plan_exists_ = false;
+
+    // create service call message, request, and response
+    moveit_msgs::GetMotionPlan motion_plan_srv;
+    moveit_msgs::MotionPlanRequest motion_plan_req;
+    moveit_msgs::MotionPlanResponse motion_plan_res;
 
     // ***** PROCESS REQUESTED PLANNING GROUP ARM *****
 
@@ -123,81 +109,117 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
         }
     }
     else {
-        ROS_WARN("[MoveIt Planner Executor Server Node] Invalid planning group arm %d requested; expect 0,1,2", req.planning_group_arm);
+        ROS_WARN("[MoveIt Planner Executor Server Node] Invalid planning group arm %d requested (expect 0,1,2); ignoring request", req.planning_group_arm);
         // invalid request, set response success to false
         res.success = false;
-        return res.success;
+        return true; // service communication succeeded
     }
 
-    // ***** PROCESS REQUESTED PLANNING SCENE *****
+    // initialize end-effector link and planning frame
+    std::string ee_name;
+    std::string planning_frame;
 
-    // clear map
-    clearPlanningSceneObstacles();
-
-    // check if collision-aware planning is requested
-    if( req.collision_aware_planning ) {
-        // collision-aware planning requested; update planning scene with collision objects from octomap
-        bool updated_planning_scene = addPlanningSceneObstacles();
-
-        if( !updated_planning_scene ) {
-            ROS_WARN("[MoveIt Planner Executor Server Node] Could not update planning scene; ignoring request");
-            // cannot update planning scene, set response success to false
-            res.success = false;
-            return res.success;
-        }
-    }
-
-    // ***** PROCESS PLANNING REQUEST *****
-
-    // initialize plan
-    moveit::planning_interface::MoveGroupInterface::Plan moveit_plan;
-    // initialize success flag
-    bool plan_success = false;
-
-    // set pose for correct move group
+    // set group name, end-effector link, and planning frame based on left/right arm
     if( use_left_move_group ) {
-        // set pose target for left move group
-        move_group_interface_larm_.setPoseTarget(req.arm_goal_pose);
-
-        // plan using left move group
-        plan_success = (move_group_interface_larm_.plan(moveit_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+        // set left arm joint group, left end-effector, and planning frame
+        motion_plan_req.group_name = left_arm_planning_group;
+        ee_name = move_group_interface_larm_.getEndEffectorLink();
+        planning_frame = move_group_interface_larm_.getPlanningFrame();
     }
-    else { // !use_left_move_group, so use right move group
-        // set pose target for right move group
-        move_group_interface_rarm_.setPoseTarget(req.arm_goal_pose);
-
-        // plan using right move group
-        plan_success = (move_group_interface_rarm_.plan(moveit_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    else { // !use_left_move_group
+        // set right arm joint group, right end-effector, and planning frame
+        motion_plan_req.group_name = right_arm_planning_group;
+        ee_name = move_group_interface_rarm_.getEndEffectorLink();
+        planning_frame = move_group_interface_rarm_.getPlanningFrame();
     }
+
+    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan for %s joing group with end-effector %s in %s frame", motion_plan_req.group_name.c_str(), ee_name.c_str(), planning_frame.c_str());
+
+    // ***** PROCESS REQUESTED COLLISION AWARENESS *****
+
+    if( !req.collision_aware_planning ) {
+        // collision-aware planning not requested, but node defaults to collision-aware planning
+        ROS_WARN("[MoveIt Planner Executor Server Node] Requested plan without collision awareness, but collision-aware planning performed by default; ignoring request");
+        // invalid request, set response success to false
+        res.success = false;
+        return true; // service communication succeeded
+    }
+
+    // ***** PROCESS REQUESTED PLANNING TIME *****
+
+    if( req.allowed_planning_time != 0.0 ) {
+        // non-default planning time requested
+        motion_plan_req.allowed_planning_time = req.allowed_planning_time;
+    }
+    else { // req.allowed_planning_time == 0.0
+        // set some default planning time; this node will use 2.0 seconds
+        motion_plan_req.allowed_planning_time = 2.0;
+    }
+
+    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan in %f seconds or less", motion_plan_req.allowed_planning_time);
+
+    // ***** PROCESS REQUESTED ARM GOAL POSE *****
+
+    // create pose stamped message from requested arm goal pose
+    geometry_msgs::PoseStamped pose_msg;
+    pose_msg.pose = req.arm_goal_pose;
+    pose_msg.header.frame_id = planning_frame;
+
+    // set position and angular tolerances
+    std::vector<double> tolerance_pos(3, 0.01);
+    std::vector<double> tolerance_ang(3, 0.01);
+    
+    // set target pose as a goal constraint
+    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints(ee_name, pose_msg, tolerance_pos, tolerance_ang);
+    
+    // add requested pose as goal constraint
+    motion_plan_req.goal_constraints.push_back(pose_goal);
+
+    // set motion plan request in service call message
+    motion_plan_srv.request.motion_plan_request = motion_plan_req;
+
+    // ***** CALL MOTION PLANNING SERVICE *****
+
+    ROS_INFO("[MoveIt Planner Executor Server Node] Calling motion planning client...");
+
+    // call service
+    plan_kinematic_path_client_.call(motion_plan_srv);
+
+    // get response in service call message
+    motion_plan_res = motion_plan_srv.response.motion_plan_response;
 
     // check success
+    bool plan_success = (motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS);
+
     if( plan_success ) {
-        ROS_INFO("[MoveIt Planner Executor Server Node] Found plan in %f seconds", moveit_plan.planning_time_);
+        ROS_INFO("[MoveIt Planner Executor Server Node] Found plan in %f seconds", motion_plan_res.planning_time);
     }
     else {
         ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan");
         // could not find plan, set response success to false
         res.success = plan_success;
-        return res.success;
+        return true; // service communication succeeded
     }
 
     // ***** SET RESPONSE *****
 
     // successful plan, set response success and planned trajectory
     res.success = plan_success;
-    res.planned_trajectory = moveit_plan.trajectory_;
+    res.planned_trajectory = motion_plan_res.trajectory;
 
     // ***** PROCESS INTERNAL STORAGE *****
 
     // store plan internally
     plan_exists_ = true;
-    planned_trajectory_ = moveit_plan.trajectory_;
+    planned_trajectory_ = res.planned_trajectory;
 
-    return res.success;
+    return true; // service communication succeeded
 }
 
 bool MoveItPlannerExecutorServerNode::executeToArmGoalCallback(val_moveit_planner_executor::ExecuteToArmGoal::Request&  req,
                                                                val_moveit_planner_executor::ExecuteToArmGoal::Response& res) {
+    ROS_INFO("[MoveIt Planner Executor Server Node] Received new arm goal motion trajectory execution request");
+
     // ***** PROCESS REQUESTED TRAJECTORY *****
 
     // initialize robot trajectory
@@ -214,7 +236,7 @@ bool MoveItPlannerExecutorServerNode::executeToArmGoalCallback(val_moveit_planne
             ROS_WARN("[MoveIt Planner Executor Server Node] Requested to execute stored robot trajectory, but no planned trajectory exists; ignoring request");
             // no plan exists for execution, set response success to false
             res.success = false;
-            return res.success;
+            return true; // service communication succeeded
         }
     }
     else {
@@ -224,6 +246,8 @@ bool MoveItPlannerExecutorServerNode::executeToArmGoalCallback(val_moveit_planne
 
     // ***** SEND ROBOT TRAJECTORY TO IHMCMsgInterfaceNode *****
 
+    ROS_INFO("[MoveIt Planner Executor Server Node] Sending robot trajectory for execution...");
+
     // publish robot trajectory for IHMCMsgInterfaceNode
     ihmc_msg_interface_pub_.publish(moveit_robot_traj_msg);
 
@@ -232,13 +256,15 @@ bool MoveItPlannerExecutorServerNode::executeToArmGoalCallback(val_moveit_planne
     // successfully sent robot trajectory, set response success to true
     res.success = true;
 
+    ROS_INFO("[MoveIt Planner Executor Server Node] Sent planned robot trajectory to IHMCMstInterfaceNode for execution");
+
     // ***** PROCESS INTERNAL STORAGE *****
 
     // interanlly stored plan executed; reset internally stored plan
     planned_trajectory_ = moveit_msgs::RobotTrajectory();
     plan_exists_ = false;
 
-    return res.success;
+    return true; // service communication succeeded
 }
 
 // GETTERS/SETTERS
@@ -247,63 +273,7 @@ double MoveItPlannerExecutorServerNode::getLoopRate() {
 }
 
 std::string MoveItPlannerExecutorServerNode::getTabString() {
-    return std::string("\t\t\t\t\t\t\t\t\t\t");
-}
-
-// OCTOMAP HELPERS
-bool MoveItPlannerExecutorServerNode::initializeOctomapVariables() {
-    // initialize helpers for possible octomap topics
-    std::string points_topic("octomap_point_cloud_centers");
-    std::string occupancy_topic("occupied_cells_vis_array");
-
-    // check topic
-    if( octomap_topic_ == points_topic ) {
-        volumetric_points_ = false;
-    }
-    else {
-        volumetric_points_ = true;
-    }
-
-    // set octomap flag
-    received_octomap_data_ = false;
-
-    // set timeout
-    octomap_timeout_ = 3.0; // seconds // TODO timeout time?
-
-    return true;
-}
-
-void MoveItPlannerExecutorServerNode::markOctomapDataRecieved() {
-    // update flag
-    received_octomap_data_ = true;
-
-    // store message time
-    last_octomap_data_received_ = std::chrono::system_clock::now();
-
-    return;
-}
-
-bool MoveItPlannerExecutorServerNode::checkOctomapTimeout() {
-    if( !received_octomap_data_ ) {
-        // data not received
-        return true;
-    }
-
-    // get current time
-    std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
-
-    // compute duration since last octomap
-    double time_since_octomap_data = std::chrono::duration_cast<std::chrono::seconds>(t - last_octomap_data_received_).count();
-
-    // check for timeout
-    bool timed_out = time_since_octomap_data > octomap_timeout_;
-
-    // if timed out, update received octomap data flag
-    if( timed_out ) {
-        received_octomap_data_ = false;
-    }
-
-    return timed_out;
+    return std::string("\t");
 }
 
 // MOVEIT HELPERS
@@ -311,13 +281,6 @@ void MoveItPlannerExecutorServerNode::initializeMoveItVariables() {
     // move group interfaces for left and right arms
     move_group_interface_larm_ = moveit::planning_interface::MoveGroupInterface(left_arm_planning_group);
     move_group_interface_rarm_ = moveit::planning_interface::MoveGroupInterface(right_arm_planning_group);
-
-    // joint model group pointers for left and right arms
-    joint_model_group_larm_ = move_group_interface_larm_.getCurrentState()->getJointModelGroup(left_arm_planning_group);
-    joint_model_group_rarm_ = move_group_interface_rarm_.getCurrentState()->getJointModelGroup(right_arm_planning_group);
-
-    // planning scene interface
-    planning_scene_interface_ = moveit::planning_interface::PlanningSceneInterface();
 
     // set flag for internally stored plan
     plan_exists_ = false;
@@ -333,132 +296,23 @@ void MoveItPlannerExecutorServerNode::initializeMoveItVariables() {
     return;
 }
 
-bool MoveItPlannerExecutorServerNode::addPlanningSceneObstacles() {
-    // check if octomap data is recent (function call implicitly checks if data is received)
-    if( checkOctomapTimeout() ) {
-        // old octomap data
-        ROS_WARN("[MoveIt Planner Executor Server Node] Octomap data more than %f seconds old; cannot update planning scene", octomap_timeout_);
-        return false;
+// IHMCMsgInterface HELPERS
+void MoveItPlannerExecutorServerNode::tellIHMCMsgInterfaceReceiveMoveItTrajectories() {
+    std_msgs::Bool bool_msg;
+    bool_msg.data = true;
+
+    if( ihmc_msg_interface_recv_pub_counter_ > 0 ) {
+        ROS_INFO("[MoveIt Planner Executor Server Node] Telling IHMCMstInterfaceNode to accept MoveIt trajectories");
+        ihmc_msg_interface_recv_moveit_traj_pub_.publish(bool_msg);
+        ihmc_msg_interface_recv_pub_counter_--;
     }
-
-    // current octomap data, can proceed with updating planning scene
-    if( volumetric_points_ ) {
-        // use stored visualizatoin_msgs::MarkerArray
-        return addPlanningSceneObstacles(obstacles_);
-    }
-    else { // !volumetric_points_
-        return addPlanningSceneObstacles(point_cloud_);
-    }
-}
-
-bool MoveItPlannerExecutorServerNode::addPlanningSceneObstacles(sensor_msgs::PointCloud2& point_cloud) {
-    ROS_WARN("[MoveIt Planner Executor Server Node] Node requires octomap as visualization_msgs::MarkerArray, not sensor_msgs::PointCloud2 since volumetric points are required for collision-aware motion planning; please restart node with volumetric_points:=true");
-    return false;
-
-    /*
-    // initialize vector of collision objects
-    std::vector<moveit_msgs::CollisionObject> collision_objects;
-
-    // CREATE OBJECTS FROM POINT CLOUD
-    // working with PointCloud2 is complicated since data cannot easily be used directly
-    // would need to convert from sensor_msgs::PointCloud2 object to pcl point cloud object
-    // skipping this for now; assume using volumetric points
-
-    // add collision objects to world
-    planning_scene_interface_.addCollisionObjects(collision_objects);
-
-    return true;
-    */
-}
-
-bool MoveItPlannerExecutorServerNode::addPlanningSceneObstacles(visualization_msgs::MarkerArray& obstacles) {
-    // initialize vector of collision objects
-    std::vector<moveit_msgs::CollisionObject> collision_objects;
-
-    // loop through octomap obstacles
-    for( int i = 0 ; i < obstacles.markers.size() ; i++ ) {
-        // get marker
-        visualization_msgs::Marker marker = obstacles.markers[i];
-
-        // initialize corresponding collision object
-        moveit_msgs::CollisionObject collision_obj;
-
-        // set frame id
-        collision_obj.header.frame_id = marker.header.frame_id;
-
-        // set id to identify object
-        collision_obj.id = marker.ns + std::string("/") + std::to_string(marker.id);
-
-        // create primitive shape for collision object
-        shape_msgs::SolidPrimitive primitive;
-        // set primitive type; make sure marker type and primitive type match
-        if( marker.type == marker.CUBE ) {
-            primitive.type = primitive.BOX;
-            // set dimensions based on marker scale
-            primitive.dimensions.resize(3);
-            primitive.dimensions[primitive.BOX_X] = marker.scale.x;
-            primitive.dimensions[primitive.BOX_Y] = marker.scale.y;
-            primitive.dimensions[primitive.BOX_Z] = marker.scale.z;
-        }
-        else {
-            // marker and primitive types also have SPHERE and CYLINDER in common, but setting dimensions is more complicated
-            // assume type must be CUBE/BOX
-            ROS_WARN("[MoveIt Planner Executor Server Node] Expected Octomap markers to be of type %d, but got %d instead", marker.CUBE, marker.type);
-            return false;
-        }
-
-        // create primitive pose for collision object
-        geometry_msgs::Pose primitive_pose;
-        // set primitive pose based on marker pose
-        primitive_pose = marker.pose;
-
-        // add primitive shape and primitive pose to collision object
-        collision_obj.primitives.push_back(primitive);
-        collision_obj.primitive_poses.push_back(primitive_pose);
-
-        // set operation; make sure marker operation and primitive operation match
-        if( marker.action == marker.ADD ) {
-            collision_obj.operation = collision_obj.ADD;
-        }
-        else {
-            // marker and primitive have other actions/operations available
-            // assume action/operation must be ADD
-            ROS_WARN("[MoveIt Planner Executor Server Node] Expected Octomap markers to have action %d, but got %d instead", marker.ADD, marker.action);
-            return false;
-        }
-
-        // add collision object to vector
-        collision_objects.push_back(collision_obj);
-    }
-
-    // add collision objects to world
-    planning_scene_interface_.addCollisionObjects(collision_objects);
-
-    return true;
-}
-
-void MoveItPlannerExecutorServerNode::clearPlanningSceneObstacles() {
-    // get all objects from planning scene
-    std::map<std::string, moveit_msgs::CollisionObject> collision_obj_map;
-    collision_obj_map = planning_scene_interface_.getObjects();
-
-    // initialize vector of object ids
-    std::vector<std::string> object_ids;
-
-    // get all object ids from map
-    for( std::pair<std::string, moveit_msgs::CollisionObject> collision_obj_item : collision_obj_map ) {
-        object_ids.push_back(collision_obj_item.first);
-    }
-
-    // remove collision objects from planning scene
-    planning_scene_interface_.removeCollisionObjects(object_ids);
 
     return;
 }
 
 int main(int argc, char **argv) {
     // initialize node
-    ros::init(argc, argv, "MoveItPlannerExecutorServerNode");
+    ros::init(argc, argv, "ValkyrieMoveItPlannerExecutorServerNode");
 
     // initialize node handler
     ros::NodeHandle nh("~");
@@ -470,11 +324,17 @@ int main(int argc, char **argv) {
     // advertise services
     moveit_server_node.advertiseServices();
 
-    // run node, wait for requests
+    // get loop rate
     ros::Rate rate(moveit_server_node.getLoopRate());
+
+    // run node, wait for requests
     while( ros::ok() ) {
-        // spin
-        ros::spin();
+        // make sure IHMCMsgInterface is listening for MoveIt trajectories
+        moveit_server_node.tellIHMCMsgInterfaceReceiveMoveItTrajectories();
+
+        // spin and sleep
+        ros::spinOnce();
+        rate.sleep();
     }
 
     ROS_INFO("[MoveIt Planner Executor Server Node] Node stopped, all done!");

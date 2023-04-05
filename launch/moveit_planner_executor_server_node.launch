@@ -7,21 +7,20 @@
 		$ roslaunch val_moveit_planner_executor moveit_planner_executor_server_node.launch
 ************************************************************-->
 <launch>
+	<!-- launch val_moveit_config -->
+	<include file="$(find val_moveit_config)/launch/demo.launch"/>
+	
 	<arg name="debug" default="false"/>
 	<arg unless="$(arg debug)" name="launch_prefix" value="" />
 	<arg if="$(arg debug)" name="launch_prefix" value="xterm -e gdb **args" />
-	
-	<!-- parameters for specifying octomap topic -->
-	<arg name="volumetric_points" default="true"/>
-	<arg if="$(arg volumetric_points)" name="octomap_topic" value="occupied_cells_vis_array"/>
-	<arg unless="$(arg volumetric_points)" name="octomap_topic" value="octomap_point_cloud_centers"/>
 
 	<!-- parameters for specifying IHMCMsgInterface topic -->
 	<arg name="ihmc_msg_interface_moveit_topic" default="moveit_planned_robot_trajectory"/>
+	<arg name="ihmc_msg_interface_receive_moveit_traj_topic" default="receive_moveit_trajectories"/>
 
 	<node launch-prefix="$(arg launch_prefix)" pkg="val_moveit_planner_executor" type="moveit_planner_executor_server_node" name="ValkyrieMoveItPlannerExecutorServerNode" output="screen">
-		<param name="octomap_topic" type="string" value="$(arg octomap_topic)"/>
 		<param name="ihmc_msg_interface_moveit_topic" type="string" value="$(arg ihmc_msg_interface_moveit_topic)"/>
+		<param name="ihmc_msg_interface_receive_moveit_traj_topic" type="string" value="$(arg ihmc_msg_interface_receive_moveit_traj_topic)"/>
 		<!--<param name="" type="" value=""/> -->
 	</node>
 </launch>
