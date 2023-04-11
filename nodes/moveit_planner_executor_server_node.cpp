@@ -256,7 +256,7 @@ bool MoveItPlannerExecutorServerNode::executeToArmGoalCallback(val_moveit_planne
     // successfully sent robot trajectory, set response success to true
     res.success = true;
 
-    ROS_INFO("[MoveIt Planner Executor Server Node] Sent planned robot trajectory to IHMCMstInterfaceNode for execution");
+    ROS_INFO("[MoveIt Planner Executor Server Node] Sent planned robot trajectory to IHMCMsgInterfaceNode for execution");
 
     // ***** PROCESS INTERNAL STORAGE *****
 
@@ -302,7 +302,7 @@ void MoveItPlannerExecutorServerNode::tellIHMCMsgInterfaceReceiveMoveItTrajector
     bool_msg.data = true;
 
     if( ihmc_msg_interface_recv_pub_counter_ > 0 ) {
-        ROS_INFO("[MoveIt Planner Executor Server Node] Telling IHMCMstInterfaceNode to accept MoveIt trajectories");
+        ROS_INFO("[MoveIt Planner Executor Server Node] Telling IHMCMsgInterfaceNode to accept MoveIt trajectories");
         ihmc_msg_interface_recv_moveit_traj_pub_.publish(bool_msg);
         ihmc_msg_interface_recv_pub_counter_--;
     }
