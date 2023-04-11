@@ -8,22 +8,33 @@
 ************************************************************-->
 <launch>
 	<arg name="robot_running" default="true"/>
-	<arg name="test_robot_descriptions" default="false"/>
+	<arg name="simulate_robot_running" default="false"/>
 
+	<!-- robot running! be careful about loading robot descriptions! -->
 	<group if="$(arg robot_running)">
+		<!-- launch node to filter joint states -->
+		<include file="$(find val_moveit_planner_executor)/launch/moveit_filter_joint_states_node.launch"/>
+		<!-- launch robot_demo in val_moveit_config -->
 		<include file="$(find val_moveit_config)/launch/robot_demo.launch"/>
-		<include file="$(find val_moveit_planner_executor/launch/moveit_filter_joint_states_node.launch"/>
 	</group>
+
+	<!-- robot is not running, may need to launch additional support nodes -->
 	<group unless="$(arg robot_running)">
-		<group if="$(arg test_robot_descriptions)">
+		<!-- pretend robot is running -->
+		<group if="$(arg simulate_robot_running)">
+			<!-- load robot descriptions to simulate descriptions on ros param server when Val is running -->
 			<include file="$(find val_moveit_config)/launch/test_robot_descriptions_NOT_ON_CONSOLE.launch"/>
+			<!-- launch robot_demo in val_moveit_config -->
 			<include file="$(find val_moveit_config)/launch/robot_demo.launch"/>
 		</group>
-		<group unless="$(arg test_robot_descriptions)">
+		<!-- do not pretend robot is running -->
+		<group unless="$(arg simulate_robot_running)">
+			<!-- launch regular demo in val_moveit_config; loads robot descriptions itself -->
 			<include file="$(find val_moveit_config)/launch/demo.launch"/>
 		</group>
 	</group>
 
+	<!-- launch MoveIt services for Val -->
 	<include file="$(find val_moveit_planner_executor)/launch/moveit_planner_executor_server_node.launch"/>
 
 </launch>

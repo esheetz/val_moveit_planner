@@ -8,11 +8,16 @@
 ************************************************************-->
 <launch>
 
-	<!-- parameters for specifying IHMCMsgInterface topic -->
+	<!-- parameters for specifying joint state topics -->
 	<arg name="filter_js_topic" default="/moveit_filtered_joint_states"/>
 	<arg name="js_topic" default="/ihmc_ros/valkyrie/output/joint_states"/>
 
-	<node pkg="val_moveit_planner_executor" type="filter_joint_states_node" name="ValkyrieMoveItFilterJointStatesNode" output="screen">
+	<!-- parameters for specifying joints to filter out -->
+	<arg name="filter_joints" default="[hokuyo_joint]"/>
+
+	<rosparam param="filter_joints" subst_value="True">$(arg filter_joints)</rosparam>
+
+	<node pkg="val_moveit_planner_executor" type="moveit_filter_joint_states_node" name="ValkyrieMoveItFilterJointStatesNode" output="screen">
 		<param name="filter_js_topic" type="string" value="$(arg filter_js_topic)"/>
 		<param name="js_topic" type="string" value="$(arg js_topic)"/>
 		<!--<param name="" type="" value=""/> -->
