@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!--***********************************************************
+	Val MoveIt Utils
+	Emily Sheetz, NSTGRO VTE 2023
+
+	run:
+		$ roslaunch val_moveit_planner_executor val_moveit_utils.launch
+************************************************************-->
+<launch>
+	<arg name="robot_running" default="true"/>
+	<arg name="test_robot_descriptions" default="false"/>
+
+	<group if="$(arg robot_running)">
+		<include file="$(find val_moveit_config)/launch/robot_demo.launch"/>
+		<include file="$(find val_moveit_planner_executor/launch/moveit_filter_joint_states_node.launch"/>
+	</group>
+	<group unless="$(arg robot_running)">
+		<group if="$(arg test_robot_descriptions)">
+			<include file="$(find val_moveit_config)/launch/test_robot_descriptions_NOT_ON_CONSOLE.launch"/>
+			<include file="$(find val_moveit_config)/launch/robot_demo.launch"/>
+		</group>
+		<group unless="$(arg test_robot_descriptions)">
+			<include file="$(find val_moveit_config)/launch/demo.launch"/>
+		</group>
+	</group>
+
+	<include file="$(find val_moveit_planner_executor)/launch/moveit_planner_executor_server_node.launch"/>
+
+</launch>

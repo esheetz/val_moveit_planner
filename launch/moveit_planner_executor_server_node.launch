@@ -7,8 +7,6 @@
 		$ roslaunch val_moveit_planner_executor moveit_planner_executor_server_node.launch
 ************************************************************-->
 <launch>
-	<!-- launch val_moveit_config -->
-	<include file="$(find val_moveit_config)/launch/demo.launch"/>
 	
 	<arg name="debug" default="false"/>
 	<arg unless="$(arg debug)" name="launch_prefix" value="" />
@@ -23,4 +21,5 @@
 		<param name="ihmc_msg_interface_receive_moveit_traj_topic" type="string" value="$(arg ihmc_msg_interface_receive_moveit_traj_topic)"/>
 		<!--<param name="" type="" value=""/> -->
 	</node>
+
 </launch>

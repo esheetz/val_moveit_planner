@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!--***********************************************************
+	MoveIt Filter Joint States Node
+	Emily Sheetz, NSTGRO VTE 2023
+
+	run:
+		$ roslaunch val_moveit_planner_executor moveit_filter_joint_states_node.launch
+************************************************************-->
+<launch>
+
+	<!-- parameters for specifying IHMCMsgInterface topic -->
+	<arg name="filter_js_topic" default="/moveit_filtered_joint_states"/>
+	<arg name="js_topic" default="/ihmc_ros/valkyrie/output/joint_states"/>
+
+	<node pkg="val_moveit_planner_executor" type="filter_joint_states_node" name="ValkyrieMoveItFilterJointStatesNode" output="screen">
+		<param name="filter_js_topic" type="string" value="$(arg filter_js_topic)"/>
+		<param name="js_topic" type="string" value="$(arg js_topic)"/>
+		<!--<param name="" type="" value=""/> -->
+	</node>
+
+</launch>
