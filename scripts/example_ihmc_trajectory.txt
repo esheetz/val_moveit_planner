@@ -1,0 +1,827 @@
+sequence_id: 1
+left_hand_trajectory_message: 
+  sequence_id: 0
+  force_execution: False
+  robot_side: 0
+  se3_trajectory: 
+    sequence_id: 0
+    taskspace_trajectory_points: []
+    angular_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    linear_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    frame_information: 
+      sequence_id: 0
+      trajectory_reference_frame_id: 0
+      data_reference_frame_id: 0
+    angular_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    linear_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    use_custom_control_frame: False
+    control_frame_pose: 
+      position: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      orientation: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 0.0
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+right_hand_trajectory_message: 
+  sequence_id: 0
+  force_execution: False
+  robot_side: 0
+  se3_trajectory: 
+    sequence_id: 0
+    taskspace_trajectory_points: []
+    angular_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    linear_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    frame_information: 
+      sequence_id: 0
+      trajectory_reference_frame_id: 0
+      data_reference_frame_id: 0
+    angular_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    linear_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    use_custom_control_frame: False
+    control_frame_pose: 
+      position: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      orientation: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 0.0
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+left_arm_trajectory_message: 
+  sequence_id: 1
+  force_execution: False
+  robot_side: 0
+  jointspace_trajectory: 
+    sequence_id: 1
+    joint_trajectory_messages: 
+      - 
+        sequence_id: 1
+        trajectory_points: 
+          - 
+            sequence_id: 2
+            time: 0.0
+            position: -0.1
+            velocity: 0.0
+          - 
+            sequence_id: 3
+            time: 0.28256683400000004
+            position: -0.11850753387383312
+            velocity: -0.11116138129712708
+          - 
+            sequence_id: 4
+            time: 0.40058086200000004
+            position: -0.1370150677476662
+            velocity: -0.18047187176687723
+          - 
+            sequence_id: 5
+            time: 0.49125123000000004
+            position: -0.15552260162149933
+            velocity: -0.22256609335627994
+          - 
+            sequence_id: 6
+            time: 0.5680417360000001
+            position: -0.17403013549533242
+            velocity: -0.25651975096731083
+          - 
+            sequence_id: 7
+            time: 0.636077588
+            position: -0.19253766936916553
+            velocity: -0.28476816824783263
+          - 
+            sequence_id: 8
+            time: 0.698285665
+            position: -0.21104520324299864
+            velocity: -0.3094914829290626
+          - 
+            sequence_id: 9
+            time: 0.755856733
+            position: -0.22955273711683175
+            velocity: -0.3313613525256416
+          - 
+            sequence_id: 10
+            time: 0.8100912840000001
+            position: -0.24806027099066483
+            velocity: -0.3313613525256416
+          - 
+            sequence_id: 11
+            time: 0.8676623520000001
+            position: -0.26656780486449794
+            velocity: -0.3097063844178192
+          - 
+            sequence_id: 12
+            time: 0.9297806890000001
+            position: -0.285075338738331
+            velocity: -0.2860880026438022
+          - 
+            sequence_id: 13
+            time: 0.9972682900000001
+            position: -0.3035828726121641
+            velocity: -0.257453780136405
+          - 
+            sequence_id: 14
+            time: 1.074167856
+            position: -0.3220904064859973
+            velocity: -0.2222036495895956
+          - 
+            sequence_id: 15
+            time: 1.165008709
+            position: -0.3405979403598304
+            velocity: -0.18092749312317857
+          - 
+            sequence_id: 16
+            time: 1.282056705
+            position: -0.35910547423366346
+            velocity: -0.11219530034998917
+          - 
+            sequence_id: 17
+            time: 1.561325438
+            position: -0.37761300810749654
+            velocity: 0.0
+        weight: -1.0
+      - 
+        sequence_id: 1
+        trajectory_points: 
+          - 
+            sequence_id: 2
+            time: 0.0
+            position: -1.0
+            velocity: 0.0
+          - 
+            sequence_id: 3
+            time: 0.28256683400000004
+            position: -0.9764967609497148
+            velocity: 0.14116697208806256
+          - 
+            sequence_id: 4
+            time: 0.40058086200000004
+            position: -0.9529935218994298
+            velocity: 0.22918631801000838
+          - 
+            sequence_id: 5
+            time: 0.49125123000000004
+            position: -0.9294902828491446
+            velocity: 0.282642956771059
+          - 
+            sequence_id: 6
+            time: 0.5680417360000001
+            position: -0.9059870437988595
+            velocity: 0.3257616638286146
+          - 
+            sequence_id: 7
+            time: 0.636077588
+            position: -0.8824838047485744
+            velocity: 0.36163512534230746
+          - 
+            sequence_id: 8
+            time: 0.698285665
+            position: -0.8589805656982892
+            velocity: 0.3930319596817498
+          - 
+            sequence_id: 9
+            time: 0.755856733
+            position: -0.8354773266480041
+            velocity: 0.4208051236608634
+          - 
+            sequence_id: 10
+            time: 0.8100912840000001
+            position: -0.8119740875977189
+            velocity: 0.4208051236608634
+          - 
+            sequence_id: 11
+            time: 0.8676623520000001
+            position: -0.7884708485474339
+            velocity: 0.3933048691410514
+          - 
+            sequence_id: 12
+            time: 0.9297806890000001
+            position: -0.7649676094971487
+            velocity: 0.3633112202519123
+          - 
+            sequence_id: 13
+            time: 0.9972682900000001
+            position: -0.7414643704468635
+            velocity: 0.3269478138035823
+          - 
+            sequence_id: 14
+            time: 1.074167856
+            position: -0.7179611313965784
+            velocity: 0.2821826792133494
+          - 
+            sequence_id: 15
+            time: 1.165008709
+            position: -0.6944578923462933
+            velocity: 0.22976492441573282
+          - 
+            sequence_id: 16
+            time: 1.282056705
+            position: -0.6709546532960082
+            velocity: 0.14247997504262805
+          - 
+            sequence_id: 17
+            time: 1.561325438
+            position: -0.6474514142457231
+            velocity: 0.0
+        weight: -1.0
+      - 
+        sequence_id: 1
+        trajectory_points: 
+          - 
+            sequence_id: 2
+            time: 0.0
+            position: 0.4
+            velocity: 0.0
+          - 
+            sequence_id: 3
+            time: 0.28256683400000004
+            position: 0.40502693538574946
+            velocity: 0.030193168089313955
+          - 
+            sequence_id: 4
+            time: 0.40058086200000004
+            position: 0.4100538707714989
+            velocity: 0.049018980297533044
+          - 
+            sequence_id: 5
+            time: 0.49125123000000004
+            position: 0.41508080615724835
+            velocity: 0.06045242861570821
+          - 
+            sequence_id: 6
+            time: 0.5680417360000001
+            position: 0.4201077415429978
+            velocity: 0.06967477255867043
+          - 
+            sequence_id: 7
+            time: 0.636077588
+            position: 0.42513467692874723
+            velocity: 0.0773474840818216
+          - 
+            sequence_id: 8
+            time: 0.698285665
+            position: 0.4301616123144967
+            velocity: 0.08406272265824863
+          - 
+            sequence_id: 9
+            time: 0.755856733
+            position: 0.4351885477002461
+            velocity: 0.09000292096377255
+          - 
+            sequence_id: 10
+            time: 0.8100912840000001
+            position: 0.44021548308599556
+            velocity: 0.09000292096377255
+          - 
+            sequence_id: 11
+            time: 0.8676623520000001
+            position: 0.445242418471745
+            velocity: 0.08412109326049344
+          - 
+            sequence_id: 12
+            time: 0.9297806890000001
+            position: 0.45026935385749445
+            velocity: 0.07770597172656456
+          - 
+            sequence_id: 13
+            time: 0.9972682900000001
+            position: 0.4552962892432439
+            velocity: 0.06992846947547454
+          - 
+            sequence_id: 14
+            time: 1.074167856
+            position: 0.46032322462899333
+            velocity: 0.06035398322538703
+          - 
+            sequence_id: 15
+            time: 1.165008709
+            position: 0.4653501600147428
+            velocity: 0.0491427341771212
+          - 
+            sequence_id: 16
+            time: 1.282056705
+            position: 0.4703770954004922
+            velocity: 0.03047399665935817
+          - 
+            sequence_id: 17
+            time: 1.561325438
+            position: 0.47540403078624166
+            velocity: 0.0
+        weight: -1.0
+      - 
+        sequence_id: 1
+        trajectory_points: 
+          - 
+            sequence_id: 2
+            time: 0.0
+            position: -1.7
+            velocity: 0.0
+          - 
+            sequence_id: 3
+            time: 0.28256683400000004
+            position: -1.687973064681521
+            velocity: 0.07223710905446719
+          - 
+            sequence_id: 4
+            time: 0.40058086200000004
+            position: -1.675946129363042
+            velocity: 0.11727783633095823
+          - 
+            sequence_id: 5
+            time: 0.49125123000000004
+            position: -1.663919194044563
+            velocity: 0.14463234416483436
+          - 
+            sequence_id: 6
+            time: 0.5680417360000001
+            position: -1.6518922587260838
+            velocity: 0.16669678812033134
+          - 
+            sequence_id: 7
+            time: 0.636077588
+            position: -1.6398653234076048
+            velocity: 0.18505373885176046
+          - 
+            sequence_id: 8
+            time: 0.698285665
+            position: -1.6278383880891258
+            velocity: 0.20111993700417652
+          - 
+            sequence_id: 9
+            time: 0.755856733
+            position: -1.6158114527706469
+            velocity: 0.2153318524789611
+          - 
+            sequence_id: 10
+            time: 0.8100912840000001
+            position: -1.6037845174521679
+            velocity: 0.2153318524789611
+          - 
+            sequence_id: 11
+            time: 0.8676623520000001
+            position: -1.591757582133689
+            velocity: 0.20125958858189305
+          - 
+            sequence_id: 12
+            time: 0.9297806890000001
+            position: -1.57973064681521
+            velocity: 0.18591142000040217
+          - 
+            sequence_id: 13
+            time: 0.9972682900000001
+            position: -1.567703711496731
+            velocity: 0.1673037576106395
+          - 
+            sequence_id: 14
+            time: 1.074167856
+            position: -1.5556767761782517
+            velocity: 0.14439681371716803
+          - 
+            sequence_id: 15
+            time: 1.165008709
+            position: -1.5436498408597727
+            velocity: 0.11757391730097366
+          - 
+            sequence_id: 16
+            time: 1.282056705
+            position: -1.5316229055412938
+            velocity: 0.07290899098417676
+          - 
+            sequence_id: 17
+            time: 1.561325438
+            position: -1.5195959702228148
+            velocity: 0.0
+        weight: -1.0
+      - 
+        sequence_id: 1
+        trajectory_points: 
+          - 
+            sequence_id: 2
+            time: 0.0
+            position: 0.0
+            velocity: 0.0
+          - 
+            sequence_id: 3
+            time: 0.28256683400000004
+            position: 0.03894045419904958
+            velocity: 0.2338871676049702
+          - 
+            sequence_id: 4
+            time: 0.40058086200000004
+            position: 0.07788090839809916
+            velocity: 0.3797186975132807
+          - 
+            sequence_id: 5
+            time: 0.49125123000000004
+            position: 0.11682136259714876
+            velocity: 0.46828631106034124
+          - 
+            sequence_id: 6
+            time: 0.5680417360000001
+            position: 0.15576181679619833
+            velocity: 0.5397259127979837
+          - 
+            sequence_id: 7
+            time: 0.636077588
+            position: 0.1947022709952479
+            velocity: 0.5991615030179774
+          - 
+            sequence_id: 8
+            time: 0.698285665
+            position: 0.23364272519429752
+            velocity: 0.6511801625301609
+          - 
+            sequence_id: 9
+            time: 0.755856733
+            position: 0.2725831793933471
+            velocity: 0.6971950806262364
+          - 
+            sequence_id: 10
+            time: 0.8100912840000001
+            position: 0.31152363359239665
+            velocity: 0.6971950806262364
+          - 
+            sequence_id: 11
+            time: 0.8676623520000001
+            position: 0.3504640877914462
+            velocity: 0.6516323222634501
+          - 
+            sequence_id: 12
+            time: 0.9297806890000001
+            position: 0.3894045419904958
+            velocity: 0.6019384775839544
+          - 
+            sequence_id: 13
+            time: 0.9972682900000001
+            position: 0.42834499618954536
+            velocity: 0.5416911405980582
+          - 
+            sequence_id: 14
+            time: 1.074167856
+            position: 0.46728545038859504
+            velocity: 0.46752371756773853
+          - 
+            sequence_id: 15
+            time: 1.165008709
+            position: 0.5062259045876446
+            velocity: 0.38067733968992723
+          - 
+            sequence_id: 16
+            time: 1.282056705
+            position: 0.5451663587866942
+            velocity: 0.23606256697465205
+          - 
+            sequence_id: 17
+            time: 1.561325438
+            position: 0.5841068129857437
+            velocity: 0.0
+        weight: -1.0
+    queueing_properties: 
+      sequence_id: 1
+      execution_mode: 0
+      message_id: -1
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 1681320794674367773
+right_arm_trajectory_message: 
+  sequence_id: 0
+  force_execution: False
+  robot_side: 0
+  jointspace_trajectory: 
+    sequence_id: 0
+    joint_trajectory_messages: []
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+chest_trajectory_message: 
+  sequence_id: 0
+  so3_trajectory: 
+    sequence_id: 0
+    taskspace_trajectory_points: []
+    selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    frame_information: 
+      sequence_id: 0
+      trajectory_reference_frame_id: 0
+      data_reference_frame_id: 0
+    weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    use_custom_control_frame: False
+    control_frame_pose: 
+      position: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      orientation: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 0.0
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+spine_trajectory_message: 
+  sequence_id: 0
+  jointspace_trajectory: 
+    sequence_id: 0
+    joint_trajectory_messages: []
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+pelvis_trajectory_message: 
+  sequence_id: 0
+  force_execution: False
+  enable_user_pelvis_control: False
+  enable_user_pelvis_control_during_walking: False
+  se3_trajectory: 
+    sequence_id: 0
+    taskspace_trajectory_points: []
+    angular_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    linear_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    frame_information: 
+      sequence_id: 0
+      trajectory_reference_frame_id: 0
+      data_reference_frame_id: 0
+    angular_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    linear_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    use_custom_control_frame: False
+    control_frame_pose: 
+      position: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      orientation: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 0.0
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+left_foot_trajectory_message: 
+  sequence_id: 0
+  robot_side: 0
+  se3_trajectory: 
+    sequence_id: 0
+    taskspace_trajectory_points: []
+    angular_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    linear_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    frame_information: 
+      sequence_id: 0
+      trajectory_reference_frame_id: 0
+      data_reference_frame_id: 0
+    angular_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    linear_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    use_custom_control_frame: False
+    control_frame_pose: 
+      position: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      orientation: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 0.0
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+right_foot_trajectory_message: 
+  sequence_id: 0
+  robot_side: 0
+  se3_trajectory: 
+    sequence_id: 0
+    taskspace_trajectory_points: []
+    angular_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    linear_selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    frame_information: 
+      sequence_id: 0
+      trajectory_reference_frame_id: 0
+      data_reference_frame_id: 0
+    angular_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    linear_weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    use_custom_control_frame: False
+    control_frame_pose: 
+      position: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      orientation: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 0.0
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+neck_trajectory_message: 
+  sequence_id: 0
+  jointspace_trajectory: 
+    sequence_id: 0
+    joint_trajectory_messages: []
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+head_trajectory_message: 
+  sequence_id: 0
+  so3_trajectory: 
+    sequence_id: 0
+    taskspace_trajectory_points: []
+    selection_matrix: 
+      sequence_id: 0
+      selection_frame_id: 0
+      x_selected: False
+      y_selected: False
+      z_selected: False
+    frame_information: 
+      sequence_id: 0
+      trajectory_reference_frame_id: 0
+      data_reference_frame_id: 0
+    weight_matrix: 
+      sequence_id: 0
+      weight_frame_id: 0
+      x_weight: 0.0
+      y_weight: 0.0
+      z_weight: 0.0
+    use_custom_control_frame: False
+    control_frame_pose: 
+      position: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      orientation: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 0.0
+    queueing_properties: 
+      sequence_id: 0
+      execution_mode: 0
+      message_id: 0
+      previous_message_id: 0
+      execution_delay_time: 0.0
+      stream_integration_duration: 0.0
+      timestamp: 0
+---
