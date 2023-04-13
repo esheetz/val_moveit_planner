@@ -9,6 +9,7 @@
 <launch>
 	<arg name="robot_running" default="true"/>
 	<arg name="simulate_robot_running" default="false"/>
+	<arg name="scs_running" default="false"/>
 
 	<!-- robot running! be careful about loading robot descriptions! -->
 	<group if="$(arg robot_running)">
@@ -26,6 +27,11 @@
 			<include file="$(find val_moveit_config)/launch/test_robot_descriptions_NOT_ON_CONSOLE.launch"/>
 			<!-- launch robot_demo in val_moveit_config -->
 			<include file="$(find val_moveit_config)/launch/robot_demo.launch"/>
+			<!-- if SCS is running, need to filter joint states-->
+			<group if="$(arg scs_running)">
+				<!-- launch node to filter joint states -->
+				<include file="$(find val_moveit_planner_executor)/launch/moveit_filter_joint_states_node.launch"/>
+			</group>
 		</group>
 		<!-- do not pretend robot is running -->
 		<group unless="$(arg simulate_robot_running)">
