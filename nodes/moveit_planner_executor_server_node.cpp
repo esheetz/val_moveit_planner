@@ -98,6 +98,8 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
         use_left_move_group = false;
     }
     else if( req.planning_group_arm == req.ASSIGN_CLOSEST_ARM ) {
+        ROS_WARN("[MoveIt Planner Executor Server Node] Feature does not currently work, but will be coming soon. Please specify planning group arm as left (0) or right (1)");
+        return true;
         // check which arm is closest based on y-coordinate of pose request
         if( req.arm_goal_pose.position.y > 0 ) {
             // set flag to use left move group

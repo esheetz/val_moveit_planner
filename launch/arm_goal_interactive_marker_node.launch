@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+
+	<node pkg="val_moveit_planner_executor" name="arm_goal_interactive_marker_node" type="arm_goal_interactive_marker_node.py" output="screen"/>
+
+</launch>

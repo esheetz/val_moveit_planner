@@ -10,13 +10,16 @@
 	<arg name="robot_running" default="true"/>
 	<arg name="simulate_robot_running" default="false"/>
 	<arg name="scs_running" default="false"/>
+	<arg name="allow_sensors" default="true"/>
 
 	<!-- robot running! be careful about loading robot descriptions! -->
 	<group if="$(arg robot_running)">
 		<!-- launch node to filter joint states -->
 		<include file="$(find val_moveit_planner_executor)/launch/moveit_filter_joint_states_node.launch"/>
 		<!-- launch robot_demo in val_moveit_config -->
-		<include file="$(find val_moveit_config)/launch/robot_demo.launch"/>
+		<include file="$(find val_moveit_config)/launch/robot_demo.launch">
+			<arg name="allow_sensors" value="$(arg allow_sensors)"/>
+		</include>
 	</group>
 
 	<!-- robot is not running, may need to launch additional support nodes -->
@@ -26,7 +29,9 @@
 			<!-- load robot descriptions to simulate descriptions on ros param server when Val is running -->
 			<include file="$(find val_moveit_config)/launch/test_robot_descriptions_NOT_ON_CONSOLE.launch"/>
 			<!-- launch robot_demo in val_moveit_config -->
-			<include file="$(find val_moveit_config)/launch/robot_demo.launch"/>
+			<include file="$(find val_moveit_config)/launch/robot_demo.launch">
+				<arg name="allow_sensors" value="$(arg allow_sensors)"/>
+			</include>
 			<!-- if SCS is running, need to filter joint states-->
 			<group if="$(arg scs_running)">
 				<!-- launch node to filter joint states -->
@@ -42,5 +47,8 @@
 
 	<!-- launch MoveIt services for Val -->
 	<include file="$(find val_moveit_planner_executor)/launch/moveit_planner_executor_server_node.launch"/>
+
+	<!-- launch IM node that uses MoveIt services for Val (mostly makes sure execution is properly routed to IHMC) -->
+	<include file="$(find val_moveit_planner_executor)/launch/arm_goal_interactive_marker_node.launch"/>
 
 </launch>
