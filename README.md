@@ -1,39 +1,41 @@
 # Valkyrie MoveIt Planner and Executor
 Services for planning and executing MoveIt arm trajectories on NASA's Valkyrie robot.
 
-This package contains a node that provides services for planning and executing MoveIt arm trajectories on NASA's Valkyrie robot.  The package depends on MoveIt, including `moveit_msgs`, `moveit_core`, `moveit_ros_planning`, and `moveit_ros_planning_interface`.  The package works best when the [`val_moveit_config`](https://js-er-code.jsc.nasa.gov/vs/val_moveit_config) and [IHMC Message Interface](https://github.com/esheetz/IHMCMsgInterface) are installed.  The server node also stores planned arm trajectories internally so that nodes using these services do not have to.
+This package contains a node that provides services for planning and executing MoveIt arm trajectories on NASA's Valkyrie robot.  The package depends on MoveIt, including `moveit_msgs`, `moveit_core`, `moveit_ros_planning`, and `moveit_ros_planning_interface`.  The package uses launch and config files from [`val_moveit_config`](https://js-er-code.jsc.nasa.gov/vs/val_moveit_config) and [`val_description`](https://js-er-code.jsc.nasa.gov/vs/val_description).  This package also allows execution of planned trajectories when the [IHMC Message Interface](https://github.com/esheetz/IHMCMsgInterface) is installed.  The server node also stores planned arm trajectories internally so that nodes using these services do not have to.
 
 For an example of a node that uses these services, please see the `SemanticFrameControllerNode` in the [`val_dynacore` package](https://github.com/esheetz/val_dynacore).
 
 
 
-## Test MoveIt Planning
-To launch the node, run:
-```
-roslaunch val_moveit_planner_executor moveit_planner_executor_server_node.launch
-```
-This launch file automatically launches the `val_moveit_config` demo for visualization purposes.
+## MoveIt Robot Demo
 
-There are several scripts that will allow you to test making service calls to the node.  Run any of the following scripts to verify the node works and see the plan visualized in RViz:
-```
-./scripts/test_plan_left_arm_goal_service.sh
-./scripts/test_plan_right_arm_goal_service.sh
-./scripts/test_execute_stored_trajectory_service.sh
-```
-Note that the final script tests execution, which amounts to publishing a message for the IHMCMsgInterface node.  For right now, this will verify that the node handles execution services properly without executing anything on the robot.
-
-
-
-## Test IHMC Execution of MoveIt Trajectories
-Launch the IHMC Message Interface and the Valkyrie MoveIt node:
+To launch a MoveIt demo on the robot, run:
 ```
 roslaunch ihmc_msg_interface ihmc_interface_node.launch
-roslaunch val_moveit_planner_executor moveit_planner_executor_server_node.launch
+roslaunch val_moveit_planner_executor val_moveit_utils.launch # optional: allow_sensors:=false to ignore map data
 ```
 
-Run any of the scripts to plan and execute a trajectory.  For initial testing, we recommend very small movements, which can be done using the following scripts:
+The `val_moveit_utils.launch` file launches several nodes that help run MoveIt on the robot.  RViz will launch with two interactive markers.  Use the MoveIt marker to move the robot around.  Plan and execute trajectories on Valkyrie using the larger interactive marker.
+
+
+
+## MoveIt SCS Demo
+
+To launch a MoveIt demo while the SCS sim is running, run:
 ```
-./scripts/small_tests/test_plan_left_arm_small_goal_service.sh
-./scripts/small_tests/test_plan_right_arm_small_goal_service.sh
-./scripts/test_execute_stored_trajectory_service.sh
+roslaunch ihmc_msg_interface ihmc_interface_node.launch
+roslaunch val_moveit_planner_executor val_moveit_utils.launch robot_running:=false simulate_robot_running:=true scs_running:=true allow_sensors:=false
 ```
+
+The demo runs as usual.  Executing a trajectory will command the simulated robot in SCS to execute.
+
+
+
+## MoveIt RViz Demo
+
+To launch a MoveIt demo in RViz only, run:
+```
+roslaunch val_moveit_planner_executor val_moveit_utils.launch robot_running:=false
+```
+
+This launches the original MoveIt demo in `val_moveit_config`, but tests the services provided in this package.
