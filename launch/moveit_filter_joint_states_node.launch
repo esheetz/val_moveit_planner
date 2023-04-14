@@ -13,7 +13,35 @@
 	<arg name="js_topic" default="/ihmc_ros/valkyrie/output/joint_states"/>
 
 	<!-- parameters for specifying joints to filter out -->
-	<arg name="filter_joints" default="[hokuyo_joint]"/>
+	<arg name="filter_joints" default="[hokuyo_joint,
+		rightThumbRoll,
+	  	rightThumbPitch1,
+	  	rightThumbPitch2,
+	  	rightThumbPitch3,
+	  	rightIndexFingerPitch1,
+	  	rightIndexFingerPitch2,
+	  	rightIndexFingerPitch3,
+	  	rightMiddleFingerPitch1,
+	  	rightMiddleFingerPitch2,
+	  	rightMiddleFingerPitch3,
+	  	rightPinkyPitch1,
+	  	rightPinkyPitch2,
+	  	rightPinkyPitch3,
+	  	leftThumbRoll,
+	  	leftThumbPitch1,
+	  	leftThumbPitch2,
+	  	leftThumbPitch3,
+	  	leftIndexFingerPitch1,
+	  	leftIndexFingerPitch2,
+	  	leftIndexFingerPitch3,
+	  	leftMiddleFingerPitch1,
+	  	leftMiddleFingerPitch2,
+	  	leftMiddleFingerPitch3,
+	  	leftPinkyPitch1,
+	  	leftPinkyPitch2,
+	  	leftPinkyPitch3]"
+	/>
+
 
 	<rosparam param="filter_joints" subst_value="True">$(arg filter_joints)</rosparam>
 
