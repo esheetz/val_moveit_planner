@@ -98,47 +98,18 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
         use_left_move_group = false;
     }
     else if( req.planning_group_arm == req.ASSIGN_CLOSEST_ARM ) {
-        // get frame names
-        std::string msg_frame_name = req.arm_goal_pose.header.frame_id;
-        std::string pelvis_frame_name = std::string("pelvis");
-
-        // initialize pelvis pose
+        // initialized transformed pelvis pose
         geometry_msgs::PoseStamped arm_goal_pelvis;
 
-        // check if arm goal is given in pelvis frame
-        if( msg_frame_name != pelvis_frame_name ) {
-            // not in pelvis frame, transformation needed to determine closest arm
-            std::string err_msg;
-            geometry_msgs::PoseStamped transformed_goal_pose;
-            try {
-                // check if transform exists
-                if( !tf_.waitForTransform(pelvis_frame_name, msg_frame_name, ros::Time(0), ros::Duration(1.0), // wait for transform from target frame to source frame
-                                          ros::Duration(0.01), &err_msg) ) { // default polling sleep duration
-                    ROS_ERROR("[MoveIt Planner Executor Server Node] No transform from %s to %s, cannot determine closest arm to handle motion planning request; ignoring request",
-                              pelvis_frame_name.c_str(), msg_frame_name.c_str());
-                    ROS_ERROR("[MoveIt Planner Executor Server Node] Transform error: %s", err_msg.c_str());
-                    ROS_ERROR("[MoveIt Planner Executor Server Node] Please consider explicitly setting the requested planning arm to either left or right.");
-                    res.success = false;
-                    return true; // service communication succeeded
-                }
-                else {
-                    // transform planning goal into pelvis frame
-                    tf_.transformPose(pelvis_frame_name, req.arm_goal_pose, transformed_goal_pose);
-                    // update pelvis pose
-                    arm_goal_pelvis = transformed_goal_pose;
-                }
-            }
-            catch( tf::TransformException ex ) {
-                ROS_ERROR("[MoveIt Planner Executor Server Node] Trouble getting transform from %s to %s, cannot determine closest arm to handle motion planning request; ignoring request",
-                          pelvis_frame_name.c_str(), msg_frame_name.c_str());
-                ROS_ERROR("[MoveIt Planner Executor Server Node] Transform exception: %s", ex.what());
-                res.success = false;
-                return true; // service communication succeeded
-            }
-        }
-        else {
-            // no transform needed, arm goal given in pelvis frame; update pelvis pose
-            arm_goal_pelvis = req.arm_goal_pose;
+        // get pose in pelvis frame
+        bool tf_succ = transformPoseToTargetFrame(std::string("pelvis"), req.arm_goal_pose, arm_goal_pelvis);
+
+        if( !tf_succ ) {
+            ROS_ERROR("[MoveIt Planner Executor Server Node] Cannot determine closest arm to handle motion planning request; ignoring request");
+            ROS_ERROR("[MoveIt Planner Executor Server Node] Please consider explicitly setting the requested planning arm to either left or right.");
+            // ignoring request, set response success to false
+            res.success = false;
+            return true; // service communication succeeded
         }
 
         // check which arm is closest based on y-coordinate of pose request in pelvis frame
@@ -203,12 +174,25 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
 
     // ***** PROCESS REQUESTED ARM GOAL POSE *****
 
+    // initialized transformed world pose
+    geometry_msgs::PoseStamped arm_goal_world;
+
+    // get pose in pelvis frame
+    bool tf_succ = transformPoseToTargetFrame(std::string("world"), req.arm_goal_pose, arm_goal_world);
+
+    if( !tf_succ ) {
+        ROS_ERROR("[MoveIt Planner Executor Server Node] Cannot transform motion planning request into world frame; ignoring request");
+        // ignoring request, set response success to false
+        res.success = false;
+        return true; // service communication succeeded
+    }
+
     // set position and angular tolerances
     std::vector<double> tolerance_pos(3, 0.01);
     std::vector<double> tolerance_ang(3, 0.01);
     
     // set target pose as a goal constraint
-    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints(ee_name, req.arm_goal_pose, tolerance_pos, tolerance_ang);
+    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints(ee_name, arm_goal_world, tolerance_pos, tolerance_ang);
     
     // add requested pose as goal constraint
     motion_plan_req.goal_constraints.push_back(pose_goal);
@@ -321,6 +305,49 @@ double MoveItPlannerExecutorServerNode::getLoopRate() {
 
 std::string MoveItPlannerExecutorServerNode::getTabString() {
     return std::string("\t");
+}
+
+// TRANSFORM HELPERS
+bool MoveItPlannerExecutorServerNode::transformPoseToTargetFrame(std::string target_frame,
+                                                                 geometry_msgs::PoseStamped source_pose,
+                                                                 geometry_msgs::PoseStamped& target_pose) {
+    // get frame name
+    std::string msg_frame_name = source_pose.header.frame_id;
+
+    // check if arm goal is given in pelvis frame
+    if( msg_frame_name != target_frame ) {
+        // not in pelvis frame, transformation needed to determine closest arm
+        std::string err_msg;
+        geometry_msgs::PoseStamped transformed_goal_pose;
+        try {
+            // check if transform exists
+            if( !tf_.waitForTransform(target_frame, msg_frame_name, ros::Time(0), ros::Duration(1.0), // wait for transform from target frame to source frame
+                                      ros::Duration(0.01), &err_msg) ) { // default polling sleep duration
+                ROS_ERROR("[MoveIt Planner Executor Server Node] No transform from %s to %s",
+                          target_frame.c_str(), msg_frame_name.c_str());
+                ROS_ERROR("[MoveIt Planner Executor Server Node] Transform error: %s", err_msg.c_str());
+                return false;
+            }
+            else {
+                // transform planning goal into pelvis frame
+                tf_.transformPose(target_frame, source_pose, transformed_goal_pose);
+                // update target pose
+                target_pose = transformed_goal_pose;
+            }
+        }
+        catch( tf::TransformException ex ) {
+            ROS_ERROR("[MoveIt Planner Executor Server Node] Trouble getting transform from %s to %s",
+                      target_frame.c_str(), msg_frame_name.c_str());
+            ROS_ERROR("[MoveIt Planner Executor Server Node] Transform exception: %s", ex.what());
+            return false;
+        }
+    }
+    else {
+        // no transform needed, given pose in target frame; update target pose
+        target_pose = source_pose;
+    }
+
+    return true;
 }
 
 // MOVEIT HELPERS

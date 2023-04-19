@@ -62,6 +62,11 @@ public:
 	double getLoopRate();
 	std::string getTabString();
 
+	// TRANSFORM HELPERS
+	bool transformPoseToTargetFrame(std::string target_frame,
+									geometry_msgs::PoseStamped source_pose,
+									geometry_msgs::PoseStamped& target_pose);
+
 	// MOVEIT HELPERS
 	void initializeMoveItVariables();
 
