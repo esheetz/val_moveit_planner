@@ -5,6 +5,7 @@ Emily Sheetz, Winter 2023
 """
 
 import rospy
+from geometry_msgs.msg import PoseStamped
 from visualization_msgs.msg import InteractiveMarkerFeedback, InteractiveMarkerUpdate, InteractiveMarker, InteractiveMarkerControl, Marker
 from moveit_msgs.msg import RobotTrajectory
 
@@ -194,12 +195,30 @@ class ArmGoalInteractiveMarkerNode:
         return controls
 
     def initialize_menu_handler(self):
-        # initialize menu handler
+        # add items to menu handler
+        self.setup_menu_handler(closest_arm_checked=True)
+
+        return
+
+    def setup_menu_handler(self, closest_arm_checked=True):
+        # clear menu handler
         self.menu_handler = MenuHandler()
 
-        # add items to menu handler
-        self.menu_handler.insert("Request Plan for Left Arm", callback=self.left_arm_plan_callback)
-        self.menu_handler.insert("Request Plan for Right Arm", callback=self.right_arm_plan_callback)
+        # add checkbox
+        self.closest_arm_checkbox = self.menu_handler.insert("Use Closest Arm for Planning Requests", callback=self.closest_arm_checkbox_callback)
+
+        # depending on whether closest arm is used or not, different planning options available
+        if closest_arm_checked:
+            # add closest arm planning button
+            self.menu_handler.setCheckState(self.closest_arm_checkbox, MenuHandler.CHECKED)
+            self.menu_handler.insert("Request Plan", callback=self.closest_arm_plan_callback)
+        else:
+            # add left/right arm planning buttons
+            self.menu_handler.setCheckState(self.closest_arm_checkbox, MenuHandler.UNCHECKED)
+            self.menu_handler.insert("Request Plan for Left Arm", callback=self.left_arm_plan_callback)
+            self.menu_handler.insert("Request Plan for Right Arm", callback=self.right_arm_plan_callback)
+
+        # add execute button
         self.menu_handler.insert("Execute Stored Plan", callback=self.execute_callback)
 
         return
@@ -208,7 +227,7 @@ class ArmGoalInteractiveMarkerNode:
         # callback to process feedback of unknown types
         return
 
-    def request_plan_from_marker_feedback(self, feedback, left_arm=True, plan_time=0.0):
+    def request_plan_from_marker_feedback(self, feedback, planning_arm=PlanToArmGoalRequest.LEFT_ARM, plan_time=0.0):
         # check type of feedback event
         if feedback.event_type == InteractiveMarkerFeedback.MENU_SELECT:
             # verify that server exists
@@ -219,20 +238,18 @@ class ArmGoalInteractiveMarkerNode:
             # get the marker from the server
             marker = self.im_server.get(feedback.marker_name)
 
+            # create pose stamped
+            pose_msg = PoseStamped()
+            pose_msg.header = marker.header
+            pose_msg.pose = marker.pose
+
             # try calling plan service
             try:
-                # set arm for planning request
-                planning_arm = -1
-                if left_arm:
-                    planning_arm = PlanToArmGoalRequest.LEFT_ARM
-                else:
-                    planning_arm = PlanToArmGoalRequest.RIGHT_ARM
-
                 # request plan based on marker pose
                 res = self.moveit_plan_client(planning_arm,
                                               True,
                                               plan_time,
-                                              marker.pose)
+                                              pose_msg)
             except rospy.ServiceException as e:
                 rospy.logwarn("[Hacky MoveIt Arm Goal IM Node] Plan to arm goal service call failed: %s" % e)
                 return
@@ -246,12 +263,31 @@ class ArmGoalInteractiveMarkerNode:
         return
 
     def left_arm_plan_callback(self, feedback):
-        self.request_plan_from_marker_feedback(feedback, left_arm=True)
+        self.request_plan_from_marker_feedback(feedback, planning_arm=PlanToArmGoalRequest.LEFT_ARM)
 
         return
 
     def right_arm_plan_callback(self, feedback):
-        self.request_plan_from_marker_feedback(feedback, left_arm=False)
+        self.request_plan_from_marker_feedback(feedback, planning_arm=PlanToArmGoalRequest.RIGHT_ARM)
+
+        return
+
+    def closest_arm_plan_callback(self, feedback):
+        self.request_plan_from_marker_feedback(feedback, planning_arm=PlanToArmGoalRequest.ASSIGN_CLOSEST_ARM)
+
+        return
+
+    def closest_arm_checkbox_callback(self, feedback):
+        # get checked state
+        handle = feedback.menu_entry_id
+        state = self.menu_handler.getCheckState(handle)
+
+        # update menu and toggle state
+        self.setup_menu_handler(closest_arm_checked=(state != MenuHandler.CHECKED))
+
+        # make sure menu reflects changes
+        self.menu_handler.apply(self.im_server, feedback.marker_name)
+        self.im_server.applyChanges()
 
         return
 
@@ -303,6 +339,7 @@ class ArmGoalInteractiveMarkerNode:
             # update marker pose
             marker.pose = pose
             self.im_server.insert(marker)
+            self.menu_handler.apply(self.im_server, marker.name)
             self.im_server.applyChanges()
 
 if __name__ == '__main__':

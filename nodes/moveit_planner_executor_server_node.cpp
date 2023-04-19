@@ -98,14 +98,55 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
         use_left_move_group = false;
     }
     else if( req.planning_group_arm == req.ASSIGN_CLOSEST_ARM ) {
-        ROS_WARN("[MoveIt Planner Executor Server Node] Feature does not currently work, but will be coming soon. Please specify planning group arm as left (0) or right (1)");
-        return true;
-        // check which arm is closest based on y-coordinate of pose request
-        if( req.arm_goal_pose.position.y > 0 ) {
+        // get frame names
+        std::string msg_frame_name = req.arm_goal_pose.header.frame_id;
+        std::string pelvis_frame_name = std::string("pelvis");
+
+        // initialize pelvis pose
+        geometry_msgs::PoseStamped arm_goal_pelvis;
+
+        // check if arm goal is given in pelvis frame
+        if( msg_frame_name != pelvis_frame_name ) {
+            // not in pelvis frame, transformation needed to determine closest arm
+            std::string err_msg;
+            geometry_msgs::PoseStamped transformed_goal_pose;
+            try {
+                // check if transform exists
+                if( !tf_.waitForTransform(pelvis_frame_name, msg_frame_name, ros::Time(0), ros::Duration(1.0), // wait for transform from target frame to source frame
+                                          ros::Duration(0.01), &err_msg) ) { // default polling sleep duration
+                    ROS_ERROR("[MoveIt Planner Executor Server Node] No transform from %s to %s, cannot determine closest arm to handle motion planning request; ignoring request",
+                              pelvis_frame_name.c_str(), msg_frame_name.c_str());
+                    ROS_ERROR("[MoveIt Planner Executor Server Node] Transform error: %s", err_msg.c_str());
+                    ROS_ERROR("[MoveIt Planner Executor Server Node] Please consider explicitly setting the requested planning arm to either left or right.");
+                    res.success = false;
+                    return true; // service communication succeeded
+                }
+                else {
+                    // transform planning goal into pelvis frame
+                    tf_.transformPose(pelvis_frame_name, req.arm_goal_pose, transformed_goal_pose);
+                    // update pelvis pose
+                    arm_goal_pelvis = transformed_goal_pose;
+                }
+            }
+            catch( tf::TransformException ex ) {
+                ROS_ERROR("[MoveIt Planner Executor Server Node] Trouble getting transform from %s to %s, cannot determine closest arm to handle motion planning request; ignoring request",
+                          pelvis_frame_name.c_str(), msg_frame_name.c_str());
+                ROS_ERROR("[MoveIt Planner Executor Server Node] Transform exception: %s", ex.what());
+                res.success = false;
+                return true; // service communication succeeded
+            }
+        }
+        else {
+            // no transform needed, arm goal given in pelvis frame; update pelvis pose
+            arm_goal_pelvis = req.arm_goal_pose;
+        }
+
+        // check which arm is closest based on y-coordinate of pose request in pelvis frame
+        if( arm_goal_pelvis.pose.position.y > 0 ) {
             // set flag to use left move group
             use_left_move_group = true;
         }
-        else { // req.arm_goal_pose.position.y <= 0
+        else { // arm_goal_pelvis.pose.position.y <= 0
             // set flag to use right move group (not the left)
             use_left_move_group = false;
         }
@@ -162,17 +203,12 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
 
     // ***** PROCESS REQUESTED ARM GOAL POSE *****
 
-    // create pose stamped message from requested arm goal pose
-    geometry_msgs::PoseStamped pose_msg;
-    pose_msg.pose = req.arm_goal_pose;
-    pose_msg.header.frame_id = planning_frame;
-
     // set position and angular tolerances
     std::vector<double> tolerance_pos(3, 0.01);
     std::vector<double> tolerance_ang(3, 0.01);
     
     // set target pose as a goal constraint
-    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints(ee_name, pose_msg, tolerance_pos, tolerance_ang);
+    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints(ee_name, req.arm_goal_pose, tolerance_pos, tolerance_ang);
     
     // add requested pose as goal constraint
     motion_plan_req.goal_constraints.push_back(pose_goal);
@@ -194,7 +230,9 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
     bool plan_success = (motion_plan_res.error_code.val == motion_plan_res.error_code.SUCCESS);
 
     if( plan_success ) {
-        ROS_INFO("[MoveIt Planner Executor Server Node] Found plan in %f seconds", motion_plan_res.planning_time);
+        ROS_INFO("[MoveIt Planner Executor Server Node] Found plan with %ld trajectory points in %f seconds",
+                 motion_plan_res.trajectory.joint_trajectory.points.size(),
+                 motion_plan_res.planning_time);
     }
     else {
         ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan");
@@ -208,6 +246,13 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
     // successful plan, set response success and planned trajectory
     res.success = plan_success;
     res.planned_trajectory = motion_plan_res.trajectory;
+
+    // check length of trajectory
+    if( res.planned_trajectory.joint_trajectory.points.size() > 50 ) {
+        ROS_WARN("[MoveIt Planner Executor Server Node] Planned joint trajectory has %ld points and trajectories with more than 50 points may not be ignored by IHMC controllers",
+                 res.planned_trajectory.joint_trajectory.points.size());
+        ROS_WARN("[MoveIt Planner Executor Server Node] Please consider replanning or using a different target to get a shorter joint trajectory");
+    }
 
     // ***** PROCESS INTERNAL STORAGE *****
 

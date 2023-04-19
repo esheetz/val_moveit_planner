@@ -5,7 +5,7 @@ int32 ASSIGN_CLOSEST_ARM = 2
 int32 planning_group_arm
 bool collision_aware_planning
 float64 allowed_planning_time
-geometry_msgs/Pose arm_goal_pose
+geometry_msgs/PoseStamped arm_goal_pose
 
 ---
 

@@ -24,6 +24,7 @@
 #include <std_msgs/Bool.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <tf/transform_listener.h>
 
 #include <val_moveit_planner_executor/PlanToArmGoal.h>
 #include <val_moveit_planner_executor/ExecuteToArmGoal.h>
@@ -69,6 +70,8 @@ public:
 
 private:
 	ros::NodeHandle nh_; // node handler
+	tf::TransformListener tf_; // transforms between frames
+
 	ros::ServiceServer plan_to_arm_goal_service_; // PlanToArmGoal service
 	ros::ServiceServer execute_to_arm_goal_service_; // ExecuteToArmGoal service
 	ros::ServiceClient plan_kinematic_path_client_; // GetMotionPlan client
