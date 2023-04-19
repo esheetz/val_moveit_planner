@@ -11,7 +11,6 @@ For an example of a node that uses these services, please see the `SemanticFrame
 
 To launch a MoveIt demo on the robot, run:
 ```
-roslaunch ihmc_msg_interface ihmc_interface_node.launch
 roslaunch val_moveit_planner_executor val_moveit_utils.launch # optional: allow_sensors:=false to ignore map data
 ```
 
@@ -23,7 +22,6 @@ The `val_moveit_utils.launch` file launches several nodes that help run MoveIt o
 
 To launch a MoveIt demo while the SCS sim is running, run:
 ```
-roslaunch ihmc_msg_interface ihmc_interface_node.launch
 roslaunch val_moveit_planner_executor val_moveit_utils.launch robot_running:=false simulate_robot_running:=true scs_running:=true allow_sensors:=false
 ```
 
