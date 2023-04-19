@@ -51,4 +51,7 @@
 	<!-- launch IM node that uses MoveIt services for Val (mostly makes sure execution is properly routed to IHMC) -->
 	<include file="$(find val_moveit_planner_executor)/launch/arm_goal_interactive_marker_node.launch"/>
 
+	<!-- launch IHMC message interface node -->
+	<include file="$(find ihmc_msg_interface)/ihmc_launch/ihmc_interface_node.launch"/>
+
 </launch>
