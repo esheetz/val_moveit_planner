@@ -13,8 +13,8 @@
 	<arg if="$(arg debug)" name="launch_prefix" value="xterm -e gdb **args" />
 
 	<!-- parameters for specifying IHMCMsgInterface topic -->
-	<arg name="ihmc_msg_interface_moveit_topic" default="moveit_planned_robot_trajectory"/>
-	<arg name="ihmc_msg_interface_receive_moveit_traj_topic" default="receive_moveit_trajectories"/>
+	<arg name="ihmc_msg_interface_moveit_topic" default="/IHMCInterfaceNode/moveit_planned_robot_trajectory"/>
+	<arg name="ihmc_msg_interface_receive_moveit_traj_topic" default="/IHMCInterfaceNode/receive_moveit_trajectories"/>
 
 	<node launch-prefix="$(arg launch_prefix)" pkg="val_moveit_planner_executor" type="moveit_planner_executor_server_node" name="ValkyrieMoveItPlannerExecutorServerNode" output="screen">
 		<param name="ihmc_msg_interface_moveit_topic" type="string" value="$(arg ihmc_msg_interface_moveit_topic)"/>

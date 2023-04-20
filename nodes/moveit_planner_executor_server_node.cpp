@@ -23,8 +23,8 @@ MoveItPlannerExecutorServerNode::MoveItPlannerExecutorServerNode(const ros::Node
     ihmc_msg_interface_recv_pub_counter_ = 5;
 
     // set up parameters
-    nh_.param("ihmc_msg_interface_moveit_topic", ihmc_msg_interface_moveit_topic_, std::string("moveit_planned_robot_trajectory"));
-    nh_.param("ihmc_msg_interface_receive_moveit_traj_topic", ihmc_msg_interface_recv_moveit_traj_topic_, std::string("receive_moveit_trajectories"));
+    nh_.param("ihmc_msg_interface_moveit_topic", ihmc_msg_interface_moveit_topic_, std::string("/IHMCInterfaceNode/moveit_planned_robot_trajectory"));
+    nh_.param("ihmc_msg_interface_receive_moveit_traj_topic", ihmc_msg_interface_recv_moveit_traj_topic_, std::string("/IHMCInterfaceNode/receive_moveit_trajectories"));
 
     // initialize variables, connections, service clients
     initializeMoveItVariables();
