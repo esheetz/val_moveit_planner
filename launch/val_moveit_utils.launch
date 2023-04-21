@@ -12,6 +12,10 @@
 	<arg name="scs_running" default="false"/>
 	<arg name="allow_sensors" default="true"/>
 
+	<!-- NOTE this happens in valkyrie_gui as well, but because we're loading the same exact URDF to the same parameter, this is ok -->
+	<!-- Ensure we have the correct robot description since multisense overwrites it -->
+	<param name="robot_description" textfile="$(find val_description)/model/urdf/valkyrie_visual.urdf"/>
+
 	<!-- robot running! be careful about loading robot descriptions! -->
 	<group if="$(arg robot_running)">
 		<!-- launch node to filter joint states -->
