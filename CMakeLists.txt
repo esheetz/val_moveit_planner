@@ -20,42 +20,49 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_msgs
   sensor_msgs
   visualization_msgs
+  val_safety_exception_reporter
   message_generation
 )
 
 find_package(Eigen3 REQUIRED)
 
 #------------------------------------------------------------------------
-#     ROS Setup
+#     ROS Messages and Services Setup
 #------------------------------------------------------------------------
-add_subdirectory (srv)
+# generate messages
+add_message_files(
+  FILES
+  ModifyAllowedCollision.msg
+)
+
+# generate services
+add_service_files(
+  FILES
+  PlanToArmGoal.srv
+  ExecuteToArmGoal.srv
+  ModifyAllowedPlanningSceneCollisions.srv
+)
+
+# dependencies for generated messages
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs
+  moveit_msgs
+)
+
+message("generated message files!")
+message("generated service files!")
 
 #------------------------------------------------------------------------
 #     catkin Setup
 #------------------------------------------------------------------------
 catkin_package(
-  CATKIN_DEPENDS message_runtime moveit_core moveit_ros_planning_interface roscpp rospy tf geometry_msgs moveit_msgs sensor_msgs visualization_msgs
+  CATKIN_DEPENDS message_runtime moveit_core moveit_ros_planning_interface roscpp rospy tf geometry_msgs moveit_msgs sensor_msgs visualization_msgs val_safety_exception_reporter
   DEPENDS EIGEN3
 )
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIRS})
 message("Eigen include directories: ${EIGEN3_INCLUDE_DIRS}")
-
-#------------------------------------------------------------------------
-#     Find ROS Services
-#     Note:
-#         ${CATKIN_DEVEL_PREFIX} is devel/.private/${PROJECT_NAME}
-#         services are in devel/include
-#         also works: ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION}
-#------------------------------------------------------------------------
-set(SERVICE_DIR ${CATKIN_DEVEL_PREFIX}/../../${CATKIN_GLOBAL_INCLUDE_DESTINATION})
-set(ANOTHER_SERVICE_DIR ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION})
-message("")
-message("Service directory: ${SERVICE_DIR}")
-message("Another service directory: ${ANOTHER_SERVICE_DIR}")
-message("")
-include_directories ("${SERVICE_DIR}")
-include_directories("${ANOTHER_SERVICE_DIR}")
 
 #------------------------------------------------------------------------
 #     Include Directories

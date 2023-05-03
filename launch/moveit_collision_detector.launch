@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+
+	<!-- parameter for specifying robot description; by default, Val's robot description is loaded to "/moveit/robot_description" -->
+	<arg name="robot_desc_name" default="/moveit/robot_description"/>
+
+	<node pkg="val_moveit_planner_executor" type="moveit_planning_scene_collision_detector" name="ValkyrieMoveItPlanningSceneCollisionDetector" output="screen">
+		<param name="robot_desc_name" type="string" value="$(arg robot_desc_name)"/>
+	</node>
+
+</launch>

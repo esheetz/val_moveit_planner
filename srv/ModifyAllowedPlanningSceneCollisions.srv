@@ -1,0 +1,5 @@
+val_moveit_planner_executor/ModifyAllowedCollision[] modify_collisions
+
+---
+
+bool success

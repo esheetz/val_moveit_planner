@@ -29,6 +29,9 @@
 #include <val_moveit_planner_executor/PlanToArmGoal.h>
 #include <val_moveit_planner_executor/ExecuteToArmGoal.h>
 
+#include <val_safety_exception_reporter/CannotExecuteMotion.h>
+#include <val_safety_exception_reporter/CannotGetMotionPlan.h>
+
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit/kinematic_constraints/utils.h>
@@ -73,6 +76,18 @@ public:
 	// IHMCMsgInterface HELPERS
 	void tellIHMCMsgInterfaceReceiveMoveItTrajectories();
 
+	// SAFETY REPORTER HELPERS
+	void publishSafetyReportClosestArm(geometry_msgs::PoseStamped requested_target);
+	void publishSafetyReportInvalidGroup(geometry_msgs::PoseStamped requested_target);
+	void publishSafetyReportCollisionAwarePlanning(std::string planning_group, geometry_msgs::PoseStamped requested_target);
+	void publishSafetyReportWorldFrameTransform(std::string planning_group, geometry_msgs::PoseStamped requested_target);
+	void publishSafetyReportNoPlanFound(std::string planning_group, geometry_msgs::PoseStamped requested_target);
+	void publishCannotGetMotionPlanMessage(std::string planning_exception,
+										   std::string planning_group,
+										   geometry_msgs::PoseStamped requested_target);
+	void publishSafetyReportNoStoredTrajectory();
+	void publishCannotExecuteMotionMessage(std::string execution_exception);
+
 private:
 	ros::NodeHandle nh_; // node handler
 	tf::TransformListener tf_; // transforms between frames
@@ -86,6 +101,9 @@ private:
 	std::string ihmc_msg_interface_recv_moveit_traj_topic_;
 	ros::Publisher ihmc_msg_interface_recv_moveit_traj_pub_;
 	int ihmc_msg_interface_recv_pub_counter_;
+
+	ros::Publisher safety_reporter_plan_pub_;
+	ros::Publisher safety_reporter_execute_pub_;
 
 	// MoveIt interfaces
 	static const std::string left_arm_planning_group;

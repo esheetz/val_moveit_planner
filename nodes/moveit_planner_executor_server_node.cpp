@@ -41,6 +41,9 @@ bool MoveItPlannerExecutorServerNode::initializeConnections() {
     ihmc_msg_interface_pub_ = nh_.advertise<moveit_msgs::RobotTrajectory>(ihmc_msg_interface_moveit_topic_, 1);
     ihmc_msg_interface_recv_moveit_traj_pub_ = nh_.advertise<std_msgs::Bool>(ihmc_msg_interface_recv_moveit_traj_topic_, 1);
 
+    safety_reporter_plan_pub_ = nh_.advertise<val_safety_exception_reporter::CannotGetMotionPlan>("/valkyrie_safety_reporter/cannot_get_motion_plan", 10);
+    safety_reporter_execute_pub_ = nh_.advertise<val_safety_exception_reporter::CannotExecuteMotion>("/valkyrie_safety_reporter/cannot_execute_motion", 10);
+
     return true;
 }
 
@@ -107,6 +110,8 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
         if( !tf_succ ) {
             ROS_ERROR("[MoveIt Planner Executor Server Node] Cannot determine closest arm to handle motion planning request; ignoring request");
             ROS_ERROR("[MoveIt Planner Executor Server Node] Please consider explicitly setting the requested planning arm to either left or right.");
+            // publish message for safety reporter
+            publishSafetyReportClosestArm(req.arm_goal_pose);
             // ignoring request, set response success to false
             res.success = false;
             return true; // service communication succeeded
@@ -124,6 +129,8 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
     }
     else {
         ROS_WARN("[MoveIt Planner Executor Server Node] Invalid planning group arm %d requested (expect 0,1,2); ignoring request", req.planning_group_arm);
+        // publish message for safety reporter
+        publishSafetyReportInvalidGroup(req.arm_goal_pose);
         // invalid request, set response success to false
         res.success = false;
         return true; // service communication succeeded
@@ -154,6 +161,8 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
     if( !req.collision_aware_planning ) {
         // collision-aware planning not requested, but node defaults to collision-aware planning
         ROS_WARN("[MoveIt Planner Executor Server Node] Requested plan without collision awareness, but collision-aware planning performed by default; ignoring request");
+        // publish message for safety reporter
+        publishSafetyReportCollisionAwarePlanning(motion_plan_req.group_name, req.arm_goal_pose);
         // invalid request, set response success to false
         res.success = false;
         return true; // service communication succeeded
@@ -182,6 +191,8 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
 
     if( !tf_succ ) {
         ROS_ERROR("[MoveIt Planner Executor Server Node] Cannot transform motion planning request into world frame; ignoring request");
+        // publish message for safety reporter
+        publishSafetyReportWorldFrameTransform(motion_plan_req.group_name, req.arm_goal_pose);
         // ignoring request, set response success to false
         res.success = false;
         return true; // service communication succeeded
@@ -220,6 +231,8 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
     }
     else {
         ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan");
+        // publish message for safety reporter
+        publishSafetyReportNoPlanFound(motion_plan_req.group_name, req.arm_goal_pose);
         // could not find plan, set response success to false
         res.success = plan_success;
         return true; // service communication succeeded
@@ -265,6 +278,8 @@ bool MoveItPlannerExecutorServerNode::executeToArmGoalCallback(val_moveit_planne
         }
         else { // !plan_exists_
             ROS_WARN("[MoveIt Planner Executor Server Node] Requested to execute stored robot trajectory, but no planned trajectory exists; ignoring request");
+            // publish message for safety reporter
+            publishSafetyReportNoStoredTrajectory();
             // no plan exists for execution, set response success to false
             res.success = false;
             return true; // service communication succeeded
@@ -380,6 +395,97 @@ void MoveItPlannerExecutorServerNode::tellIHMCMsgInterfaceReceiveMoveItTrajector
         ihmc_msg_interface_recv_moveit_traj_pub_.publish(bool_msg);
         ihmc_msg_interface_recv_pub_counter_--;
     }
+
+    return;
+}
+
+// SAFETY REPORTER HELPERS
+void MoveItPlannerExecutorServerNode::publishSafetyReportClosestArm(geometry_msgs::PoseStamped requested_target) {
+    // set up exception for safety reporter
+    std::string error_message = std::string("Cannot determine closest arm to handle motion planning request; may need to explicitly request planning arm to be either left or right");
+
+    // publish message for safety reporter
+    publishCannotGetMotionPlanMessage(error_message, std::string("closest arm"), requested_target);
+
+    return;
+}
+
+void MoveItPlannerExecutorServerNode::publishSafetyReportInvalidGroup(geometry_msgs::PoseStamped requested_target) {
+    // set up exception for safety reporter
+    std::string error_message = std::string("Invalid planning group requested");
+
+    // publish message for safety reporter
+    publishCannotGetMotionPlanMessage(error_message, std::string("unknown group"), requested_target);
+
+    return;
+}
+
+void MoveItPlannerExecutorServerNode::publishSafetyReportCollisionAwarePlanning(std::string planning_group, geometry_msgs::PoseStamped requested_target) {
+    // set up exception for safety reporter
+    std::string error_message = std::string("Cannot ignore collisions because planning scene initialized; try restarting launch file with `allow_sensors:=false` to ignore sensor data");
+
+    // publish message for safety reporter
+    publishCannotGetMotionPlanMessage(error_message, planning_group, requested_target);
+
+    return;
+}
+
+void MoveItPlannerExecutorServerNode::publishSafetyReportWorldFrameTransform(std::string planning_group, geometry_msgs::PoseStamped requested_target) {
+    // set up exception for safety reporter
+    std::string error_message = std::string("Cannot transform motion planning request into world frame");
+
+    // publish message for safety reporter
+    publishCannotGetMotionPlanMessage(error_message, planning_group, requested_target);
+
+    return;
+}
+
+void MoveItPlannerExecutorServerNode::publishSafetyReportNoPlanFound(std::string planning_group, geometry_msgs::PoseStamped requested_target) {
+    // set up exception for safety reporter
+    std::string error_message = std::string("Could not find motion plan");
+
+    // publish message for safety reporter
+    publishCannotGetMotionPlanMessage(error_message, planning_group, requested_target);
+
+    return;
+}
+
+void MoveItPlannerExecutorServerNode::publishCannotGetMotionPlanMessage(std::string planning_exception,
+                                                                        std::string planning_group,
+                                                                        geometry_msgs::PoseStamped requested_target) {
+    // create cannot get motion plan message
+    val_safety_exception_reporter::CannotGetMotionPlan motion_plan_msg;
+
+    // set message fields
+    motion_plan_msg.planning_exception = planning_exception;
+    motion_plan_msg.planning_group = planning_group;
+    motion_plan_msg.requested_plan_target = requested_target;
+
+    // publish message
+    safety_reporter_plan_pub_.publish(motion_plan_msg);
+
+    return;
+}
+
+void MoveItPlannerExecutorServerNode::publishSafetyReportNoStoredTrajectory() {
+    // set up exception for safety reporter
+    std::string error_message = std::string("Received request to execute stored robot trajectory, but no trajectory is stored; try replanning and executing");
+
+    // publish message for safety reporter
+    publishCannotExecuteMotionMessage(error_message);
+
+    return;
+}
+
+void MoveItPlannerExecutorServerNode::publishCannotExecuteMotionMessage(std::string execution_exception) {
+    // create cannot execute motion message
+    val_safety_exception_reporter::CannotExecuteMotion execute_msg;
+
+    // set message fields
+    execute_msg.execution_exception = execution_exception;
+
+    // publish message
+    safety_reporter_execute_pub_.publish(execute_msg);
 
     return;
 }

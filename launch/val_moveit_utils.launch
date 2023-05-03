@@ -58,4 +58,7 @@
 	<!-- launch IHMC message interface node -->
 	<include file="$(find ihmc_msg_interface)/ihmc_launch/ihmc_interface_node.launch"/>
 
+	<!-- launch MoveIt collision detector and collision modification services for Val -->
+	<include file="$(find val_moveit_planner_executor)/launch/moveit_collision_detector.launch"/>
+
 </launch>
