@@ -15,6 +15,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/Constraints.h>
+#include <moveit_msgs/GetCartesianPath.h>
 #include <moveit_msgs/GetMotionPlan.h>
 #include <moveit_msgs/MotionPlanRequest.h>
 #include <moveit_msgs/MotionPlanResponse.h>
@@ -27,6 +28,7 @@
 #include <tf/transform_listener.h>
 
 #include <val_moveit_planner_executor/PlanToArmGoal.h>
+#include <val_moveit_planner_executor/PlanToArmWaypoints.h>
 #include <val_moveit_planner_executor/ExecuteToArmGoal.h>
 
 #include <val_safety_exception_reporter/CannotExecuteMotion.h>
@@ -58,6 +60,8 @@ public:
 	// SERVICE CALLBACKS
 	bool planToArmGoalCallback(val_moveit_planner_executor::PlanToArmGoal::Request&  req,
 							   val_moveit_planner_executor::PlanToArmGoal::Response& res);
+	bool planToArmWaypointsCallback(val_moveit_planner_executor::PlanToArmWaypoints::Request&  req,
+									val_moveit_planner_executor::PlanToArmWaypoints::Response& res);
 	bool executeToArmGoalCallback(val_moveit_planner_executor::ExecuteToArmGoal::Request&  req,
 								  val_moveit_planner_executor::ExecuteToArmGoal::Response& res);
 
@@ -93,8 +97,10 @@ private:
 	tf::TransformListener tf_; // transforms between frames
 
 	ros::ServiceServer plan_to_arm_goal_service_; // PlanToArmGoal service
+	ros::ServiceServer plan_to_arm_waypoints_service_; // PlanToArmWaypoints service
 	ros::ServiceServer execute_to_arm_goal_service_; // ExecuteToArmGoal service
 	ros::ServiceClient plan_kinematic_path_client_; // GetMotionPlan client
+	ros::ServiceClient plan_cartesian_path_client_; // GetCartesianPlan client
 
 	std::string ihmc_msg_interface_moveit_topic_;
 	ros::Publisher ihmc_msg_interface_pub_;
