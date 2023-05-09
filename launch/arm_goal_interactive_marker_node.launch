@@ -3,4 +3,9 @@
 
 	<node pkg="val_moveit_planner_executor" name="arm_goal_interactive_marker_node" type="arm_goal_interactive_marker_node.py" output="screen"/>
 
+	<!-- rosrun rqt_reconfigure rqt_reconfigure -->
+	<node pkg="rqt_reconfigure" name="rqt_reconfigure_im" type="rqt_reconfigure" output="screen"/>
+	<!-- NOTE that several other nodes running during MoveIt demo use dynamic_reconfigure, and for some reason rqt_reconfigure does not seem to pick them all up at once -->
+	<!-- May need to refresh rqt_reconfigure to see all available nodes -->
+
 </launch>

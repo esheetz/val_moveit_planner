@@ -1,5 +1,5 @@
 #---------------------------------------------------------------------------
-# Dependencies on ROS and IHMC controller_msgs
+#     Package Setup
 #---------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.1)
 project(val_moveit_planner_executor)
@@ -22,9 +22,19 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   val_safety_exception_reporter
   message_generation
+  dynamic_reconfigure
 )
 
 find_package(Eigen3 REQUIRED)
+
+#------------------------------------------------------------------------
+#     dynamic_reconfigure Param Config Setup
+#------------------------------------------------------------------------
+generate_dynamic_reconfigure_options(
+  cfg/IMPlanningRequestParams.cfg
+)
+
+message("generated param config files!")
 
 #------------------------------------------------------------------------
 #     ROS Messages and Services Setup
@@ -39,6 +49,7 @@ add_message_files(
 add_service_files(
   FILES
   PlanToArmGoal.srv
+  PlanToArmWaypoints.srv
   ExecuteToArmGoal.srv
   ModifyAllowedPlanningSceneCollisions.srv
 )

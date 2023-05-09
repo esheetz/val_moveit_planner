@@ -53,9 +53,15 @@ void MoveItPlannerExecutorServerNode::initializeServiceClients() {
     plan_kinematic_path_client_ = nh_.serviceClient<moveit_msgs::GetMotionPlan>("/plan_kinematic_path");
     // block until service is advertised and available
     plan_kinematic_path_client_.waitForExistence();
-
     ROS_INFO("[MoveIt Planner Executor Server Node] Service /plan_kinematic_path exists!");
-    ROS_INFO("[MoveIt Planner Executor Server Node] Created motion planning client!");
+
+    // create Cartesian path client
+    plan_cartesian_path_client_ = nh_.serviceClient<moveit_msgs::GetCartesianPath>("/compute_cartesian_path");
+    // block until service is advertised and available
+    plan_cartesian_path_client_.waitForExistence();
+    ROS_INFO("[MoveIt Planner Executor Server Node] Service /compute_cartesian_path exists!");
+
+    ROS_INFO("[MoveIt Planner Executor Server Node] Created motion planning clients!");
 
     return;
 }
@@ -63,6 +69,7 @@ void MoveItPlannerExecutorServerNode::initializeServiceClients() {
 // ADVERTISE SERVICES
 void MoveItPlannerExecutorServerNode::advertiseServices() {
     plan_to_arm_goal_service_ = nh_.advertiseService("plan_to_arm_goal", &MoveItPlannerExecutorServerNode::planToArmGoalCallback, this);
+    plan_to_arm_waypoints_service_ = nh_.advertiseService("plan_to_arm_waypoints", &MoveItPlannerExecutorServerNode::planToArmWaypointsCallback, this);
     execute_to_arm_goal_service_ = nh_.advertiseService("execute_to_arm_goal", &MoveItPlannerExecutorServerNode::executeToArmGoalCallback, this);
 
     ROS_INFO("[MoveIt Planner Executor Server Node] Providing services for planning and executing MoveIt trajectories!");
@@ -243,6 +250,179 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
     // successful plan, set response success and planned trajectory
     res.success = plan_success;
     res.planned_trajectory = motion_plan_res.trajectory;
+
+    // check length of trajectory
+    if( res.planned_trajectory.joint_trajectory.points.size() > 50 ) {
+        ROS_WARN("[MoveIt Planner Executor Server Node] Planned joint trajectory has %ld points and trajectories with more than 50 points may not be ignored by IHMC controllers",
+                 res.planned_trajectory.joint_trajectory.points.size());
+        ROS_WARN("[MoveIt Planner Executor Server Node] Please consider replanning or using a different target to get a shorter joint trajectory");
+    }
+
+    // ***** PROCESS INTERNAL STORAGE *****
+
+    // store plan internally
+    plan_exists_ = true;
+    planned_trajectory_ = res.planned_trajectory;
+
+    return true; // service communication succeeded
+}
+
+bool MoveItPlannerExecutorServerNode::planToArmWaypointsCallback(val_moveit_planner_executor::PlanToArmWaypoints::Request&  req,
+                                                                 val_moveit_planner_executor::PlanToArmWaypoints::Response& res) {
+    // get number of waypoints in request
+    int num_waypoints = req.arm_waypoints.size();
+    ROS_INFO("[MoveIt Planner Executor Server Node] Received new arm waypoints motion planning request with %d waypoints", num_waypoints);
+
+    // ***** INITIALIZE VARIABLES *****
+
+    // new planning request received; reset internally stored plan
+    planned_trajectory_ = moveit_msgs::RobotTrajectory();
+    plan_exists_ = false;
+
+    // create service call message
+    moveit_msgs::GetCartesianPath cart_plan_srv;
+
+    // ***** PROCESS REQUESTED PLANNING GROUP ARM *****
+
+    // initialize flag for move group
+    bool use_left_move_group = false;
+
+    // check which move group should handle this request
+    if( req.planning_group_arm == req.LEFT_ARM ) {
+        // set flag to use left move group
+        use_left_move_group = true;
+    }
+    else if( req.planning_group_arm == req.RIGHT_ARM ) {
+        // set flag to use right move group (not the left)
+        use_left_move_group = false;
+    }
+    else {
+        ROS_WARN("[MoveIt Planner Executor Server Node] Invalid planning group arm %d requested (expect 0,1); ignoring request", req.planning_group_arm);
+        // publish message for safety reporter
+        publishSafetyReportInvalidGroup(req.arm_waypoints[num_waypoints-1]);
+        // invalid request, set response success to false
+        res.success = false;
+        return true; // service communication succeeded
+    }
+
+    // initialize end-effector link and planning frame
+    std::string ee_name;
+    std::string planning_frame;
+
+    // set group name, end-effector link, and planning frame based on left/right arm
+    if( use_left_move_group ) {
+        // set left arm joint group, left end-effector, and planning frame
+        cart_plan_srv.request.group_name = left_arm_planning_group;
+        ee_name = move_group_interface_larm_.getEndEffectorLink();
+        planning_frame = move_group_interface_larm_.getPlanningFrame();
+    }
+    else { // !use_left_move_group
+        // set right arm joint group, right end-effector, and planning frame
+        cart_plan_srv.request.group_name = right_arm_planning_group;
+        ee_name = move_group_interface_rarm_.getEndEffectorLink();
+        planning_frame = move_group_interface_rarm_.getPlanningFrame();
+    }
+
+    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan for %s joing group with end-effector %s in %s frame", cart_plan_srv.request.group_name.c_str(), ee_name.c_str(), planning_frame.c_str());
+
+    // ***** PROCESS REQUESTED WAYPOINTS *****
+
+    // clear waypoints
+    cart_plan_srv.request.waypoints.clear();
+
+    // verify non-empty list of waypoints
+    if( num_waypoints == 0 ) {
+        ROS_ERROR("[MoveIt Planner Executor Server Node] Cannot plan with empty list of waypoints; ignoring request");
+        // ignoring request, set response success to false
+        res.success = false;
+        return true; // service communication succeeded
+    }
+
+    // loop through requested waypoints and add them to service request
+    for( int i = 0 ; i < req.arm_waypoints.size() ; i++ ) {
+        // initialized transformed world pose
+        geometry_msgs::PoseStamped arm_waypoint_world;
+
+        // get pose in pelvis frame
+        bool tf_succ = transformPoseToTargetFrame(std::string("world"), req.arm_waypoints[i], arm_waypoint_world);
+
+        if( !tf_succ ) {
+            ROS_ERROR("[MoveIt Planner Executor Server Node] Cannot transform motion planning waypoint into world frame; ignoring request");
+            // publish message for safety reporter
+            publishSafetyReportWorldFrameTransform(cart_plan_srv.request.group_name, req.arm_waypoints[i]);
+            // ignoring request, set response success to false
+            res.success = false;
+            return true; // service communication succeeded
+        }
+
+        // add transformed waypoint pose to service request
+        cart_plan_srv.request.waypoints.push_back(arm_waypoint_world.pose);
+    }
+
+    // ***** PROCESS REQUESTED PLANNING PARAMETERS *****
+
+    // set max step between consecutive points (in Cartesian space) in the returned path
+    if( req.max_cart_step != 0.0 ) {
+        // non-default max Cartesian step requested
+        cart_plan_srv.request.max_step = req.max_cart_step;
+    }
+    else { // req.max_cart_step == 0.0
+        // set default max Cartesian step
+        cart_plan_srv.request.max_step = req.DEFAULT_MAX_CART_STEP;
+    }
+
+    // set max allowed distance between consecutive points (in configuration space) in the returned path
+    if( req.max_config_step != 0.0 ) {
+        // non-default max configuration step requested
+        cart_plan_srv.request.jump_threshold = req.max_config_step;
+    }
+    else { // req.max_config_step == 0.0
+        // set default max configuration step
+        cart_plan_srv.request.jump_threshold = req.DEFAULT_MAX_CONFIG_STEP;
+    }
+
+    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan with max distance of %f (m) between waypoints in Cartesian space",
+             cart_plan_srv.request.max_step);
+    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan with max distance of %f (radians) between waypoints in configuration space",
+             cart_plan_srv.request.jump_threshold);
+
+    // ***** CALL MOTION PLANNING SERVICE *****
+
+    ROS_INFO("[MoveIt Planner Executor Server Node] Calling motion planning client...");
+
+    // call service
+    plan_cartesian_path_client_.call(cart_plan_srv);
+
+    // check success
+    bool plan_success = (cart_plan_srv.response.error_code.val == cart_plan_srv.response.error_code.SUCCESS);
+
+    if( plan_success ) {
+        ROS_INFO("[MoveIt Planner Executor Server Node] Found plan with %ld trajectory points",
+                 cart_plan_srv.response.solution.joint_trajectory.points.size());
+        if( cart_plan_srv.response.fraction != 1.0 ) {
+            ROS_WARN("[MoveIt Planner Executor Server Node] Planned trajectory completes %f%% of requested trajectory",
+                     cart_plan_srv.response.fraction * 100.0);
+        }
+        else { // cart_plan_srv.response.fraction == 1.0
+            ROS_INFO("[MoveIt Planner Executor Server Node] Planned trajectory completes %f%% of requested trajectory!",
+                     cart_plan_srv.response.fraction * 100.0);
+        }
+    }
+    else {
+        ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan");
+        // publish message for safety reporter
+        publishSafetyReportNoPlanFound(cart_plan_srv.request.group_name, req.arm_waypoints[num_waypoints-1]);
+        // could not find plan, set response success to false
+        res.success = plan_success;
+        return true; // service communication succeeded
+    }
+
+    // ***** SET RESPONSE *****
+
+    // successful plan, set response success and planned trajectory
+    res.success = plan_success;
+    res.fraction = cart_plan_srv.response.fraction;
+    res.planned_trajectory = cart_plan_srv.response.solution;
 
     // check length of trajectory
     if( res.planned_trajectory.joint_trajectory.points.size() > 50 ) {

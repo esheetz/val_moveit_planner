@@ -1,0 +1,20 @@
+int32 LEFT_ARM = 0
+int32 RIGHT_ARM = 1
+
+# max distance (in Cartesian space) between consecutive points in the planned trajectory
+float64 DEFAULT_MAX_CART_STEP = 0.01
+
+# max distance (in configuration space) between consecutive points in the planned trajectory
+float64 DEFAULT_MAX_CONFIG_STEP = 5.0
+# NOTE: 0.0 disables the jump threshold
+
+int32 planning_group_arm
+float64 max_cart_step
+float64 max_config_step
+geometry_msgs/PoseStamped[] arm_waypoints
+
+---
+
+float64 fraction
+bool success
+moveit_msgs/RobotTrajectory planned_trajectory
