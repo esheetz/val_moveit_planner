@@ -29,7 +29,7 @@
 
 #include <val_moveit_planner_executor/PlanToArmGoal.h>
 #include <val_moveit_planner_executor/PlanToArmWaypoints.h>
-#include <val_moveit_planner_executor/ExecuteToArmGoal.h>
+#include <val_moveit_planner_executor/ExecuteTrajectory.h>
 
 #include <val_safety_exception_reporter/CannotExecuteMotion.h>
 #include <val_safety_exception_reporter/CannotGetMotionPlan.h>
@@ -62,8 +62,8 @@ public:
 							   val_moveit_planner_executor::PlanToArmGoal::Response& res);
 	bool planToArmWaypointsCallback(val_moveit_planner_executor::PlanToArmWaypoints::Request&  req,
 									val_moveit_planner_executor::PlanToArmWaypoints::Response& res);
-	bool executeToArmGoalCallback(val_moveit_planner_executor::ExecuteToArmGoal::Request&  req,
-								  val_moveit_planner_executor::ExecuteToArmGoal::Response& res);
+	bool executeTrajectoryCallback(val_moveit_planner_executor::ExecuteTrajectory::Request&  req,
+								   val_moveit_planner_executor::ExecuteTrajectory::Response& res);
 
 	// GETTERS/SETTERS
 	double getLoopRate();
@@ -98,7 +98,7 @@ private:
 
 	ros::ServiceServer plan_to_arm_goal_service_; // PlanToArmGoal service
 	ros::ServiceServer plan_to_arm_waypoints_service_; // PlanToArmWaypoints service
-	ros::ServiceServer execute_to_arm_goal_service_; // ExecuteToArmGoal service
+	ros::ServiceServer execute_trajectory_service_; // ExecuteTrajectory service
 	ros::ServiceClient plan_kinematic_path_client_; // GetMotionPlan client
 	ros::ServiceClient plan_cartesian_path_client_; // GetCartesianPlan client
 

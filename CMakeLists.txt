@@ -50,7 +50,7 @@ add_service_files(
   FILES
   PlanToArmGoal.srv
   PlanToArmWaypoints.srv
-  ExecuteToArmGoal.srv
+  ExecuteTrajectory.srv
   ModifyAllowedPlanningSceneCollisions.srv
 )
 

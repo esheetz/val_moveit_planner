@@ -12,7 +12,7 @@ from moveit_msgs.msg import RobotTrajectory
 # services
 from val_moveit_planner_executor.srv import PlanToArmGoal, PlanToArmGoalRequest, PlanToArmGoalResponse
 from val_moveit_planner_executor.srv import PlanToArmWaypoints, PlanToArmWaypointsRequest, PlanToArmWaypointsResponse
-from val_moveit_planner_executor.srv import ExecuteToArmGoal, ExecuteToArmGoalRequest, ExecuteToArmGoalResponse
+from val_moveit_planner_executor.srv import ExecuteTrajectory, ExecuteTrajectoryRequest, ExecuteTrajectoryResponse
 
 # dynamic reconfigure
 from dynamic_reconfigure.server import Server
@@ -31,7 +31,7 @@ class ArmGoalInteractiveMarkerNode:
         self.moveit_im_topic_name = "/rviz_moveit_motion_planning_display/robot_interaction_interactive_marker_topic/update"
         self.moveit_planner_executor_plan_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/plan_to_arm_goal"
         self.moveit_planner_executor_plan_waypoints_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/plan_to_arm_waypoints"
-        self.moveit_planner_executor_execute_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/execute_to_arm_goal"
+        self.moveit_planner_executor_execute_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/execute_trajectory"
         self.left_arm_name = "EE:goal_leftPalm"
         self.right_arm_name = "EE:goal_rightPalm"
         self.arm_names = [self.left_arm_name, self.right_arm_name]
@@ -55,10 +55,10 @@ class ArmGoalInteractiveMarkerNode:
                                                                PlanToArmWaypoints)
         rospy.loginfo("[%s] Service plan_to_arm_waypoints is ready!" % self.node_name)
 
-        rospy.loginfo("[%s] Waiting for service execute_to_arm_goal..." % self.node_name)
+        rospy.loginfo("[%s] Waiting for service execute_trajectory..." % self.node_name)
         rospy.wait_for_service(self.moveit_planner_executor_execute_service_name) # blocks until service exists
         self.moveit_execute_client = rospy.ServiceProxy(self.moveit_planner_executor_execute_service_name,
-                                                        ExecuteToArmGoal)
+                                                        ExecuteTrajectory)
         rospy.loginfo("[%s] Service execute_to_arm_goal is ready!" % self.node_name)
 
         # initialize interactive marker

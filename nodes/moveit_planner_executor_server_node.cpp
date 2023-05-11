@@ -70,7 +70,7 @@ void MoveItPlannerExecutorServerNode::initializeServiceClients() {
 void MoveItPlannerExecutorServerNode::advertiseServices() {
     plan_to_arm_goal_service_ = nh_.advertiseService("plan_to_arm_goal", &MoveItPlannerExecutorServerNode::planToArmGoalCallback, this);
     plan_to_arm_waypoints_service_ = nh_.advertiseService("plan_to_arm_waypoints", &MoveItPlannerExecutorServerNode::planToArmWaypointsCallback, this);
-    execute_to_arm_goal_service_ = nh_.advertiseService("execute_to_arm_goal", &MoveItPlannerExecutorServerNode::executeToArmGoalCallback, this);
+    execute_trajectory_service_ = nh_.advertiseService("execute_trajectory", &MoveItPlannerExecutorServerNode::executeTrajectoryCallback, this);
 
     ROS_INFO("[MoveIt Planner Executor Server Node] Providing services for planning and executing MoveIt trajectories!");
     
@@ -440,9 +440,9 @@ bool MoveItPlannerExecutorServerNode::planToArmWaypointsCallback(val_moveit_plan
     return true; // service communication succeeded
 }
 
-bool MoveItPlannerExecutorServerNode::executeToArmGoalCallback(val_moveit_planner_executor::ExecuteToArmGoal::Request&  req,
-                                                               val_moveit_planner_executor::ExecuteToArmGoal::Response& res) {
-    ROS_INFO("[MoveIt Planner Executor Server Node] Received new arm goal motion trajectory execution request");
+bool MoveItPlannerExecutorServerNode::executeTrajectoryCallback(val_moveit_planner_executor::ExecuteTrajectory::Request&  req,
+                                                                val_moveit_planner_executor::ExecuteTrajectory::Response& res) {
+    ROS_INFO("[MoveIt Planner Executor Server Node] Received new motion trajectory execution request");
 
     // ***** PROCESS REQUESTED TRAJECTORY *****
 
