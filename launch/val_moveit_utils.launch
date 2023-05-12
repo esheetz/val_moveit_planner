@@ -7,9 +7,24 @@
 		$ roslaunch val_moveit_planner_executor val_moveit_utils.launch
 ************************************************************-->
 <launch>
-	<arg name="robot_running" default="true"/>
+
+	<arg name="use_rviz" default="true"/>
+	<arg name="use_rqt" default="false"/>
+
+	<arg name="scs_setup" default="false"/>
+	<!-- if not testing with SCS, initialize params such that robot is running -->
+	<arg unless="$(arg scs_setup)" name="robot_running" value="true"/>
+	<arg unless="$(arg scs_setup)" name="simulate_robot_running" value="false"/>
+	<arg unless="$(arg scs_setup)" name="scs_running" value="false"/>
+	<!-- if testing with SCS, initialize params to simulate robot running-->
+	<arg if="$(arg scs_setup)" name="robot_running" value="false"/>
+	<arg if="$(arg scs_setup)" name="simulate_robot_running" value="true"/>
+	<arg if="$(arg scs_setup)" name="scs_running" value="true"/>
+
+	<!-- <arg name="robot_running" default="true"/>
 	<arg name="simulate_robot_running" default="false"/>
-	<arg name="scs_running" default="false"/>
+	<arg name="scs_running" default="false"/> -->
+
 	<arg name="allow_sensors" default="true"/>
 
 	<!-- NOTE this happens in valkyrie_gui as well, but because we're loading the same exact URDF to the same parameter, this is ok -->
@@ -23,6 +38,7 @@
 		<!-- launch robot_demo in val_moveit_config -->
 		<include file="$(find val_moveit_config)/launch/robot_demo.launch">
 			<arg name="allow_sensors" value="$(arg allow_sensors)"/>
+			<arg name="use_rviz" value="$(arg use_rviz)"/>
 		</include>
 	</group>
 
@@ -35,6 +51,7 @@
 			<!-- launch robot_demo in val_moveit_config -->
 			<include file="$(find val_moveit_config)/launch/robot_demo.launch">
 				<arg name="allow_sensors" value="$(arg allow_sensors)"/>
+				<arg name="use_rviz" value="$(arg use_rviz)"/>
 			</include>
 			<!-- if SCS is running, need to filter joint states-->
 			<group if="$(arg scs_running)">
@@ -53,7 +70,9 @@
 	<include file="$(find val_moveit_planner_executor)/launch/moveit_planner_executor_server_node.launch"/>
 
 	<!-- launch IM node that uses MoveIt services for Val (mostly makes sure execution is properly routed to IHMC) -->
-	<include file="$(find val_moveit_planner_executor)/launch/arm_goal_interactive_marker_node.launch"/>
+	<include file="$(find val_moveit_planner_executor)/launch/arm_goal_interactive_marker_node.launch">
+		<arg name="use_rqt" value="$(arg use_rqt)"/>
+	</include>
 
 	<!-- launch IHMC message interface node -->
 	<include file="$(find ihmc_msg_interface)/ihmc_launch/ihmc_interface_node.launch"/>
