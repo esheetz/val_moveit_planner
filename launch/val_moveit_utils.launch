@@ -11,19 +11,20 @@
 	<arg name="use_rviz" default="true"/>
 	<arg name="use_rqt" default="false"/>
 
-	<arg name="scs_setup" default="false"/>
-	<!-- if not testing with SCS, initialize params such that robot is running -->
-	<arg unless="$(arg scs_setup)" name="robot_running" value="true"/>
-	<arg unless="$(arg scs_setup)" name="simulate_robot_running" value="false"/>
-	<arg unless="$(arg scs_setup)" name="scs_running" value="false"/>
-	<!-- if testing with SCS, initialize params to simulate robot running-->
-	<arg if="$(arg scs_setup)" name="robot_running" value="false"/>
-	<arg if="$(arg scs_setup)" name="simulate_robot_running" value="true"/>
-	<arg if="$(arg scs_setup)" name="scs_running" value="true"/>
+	<!-- specify mode for running Val MoveIt demo -->
+	<!-- supported modes are "robot", "scs", or "rviz" -->
+	<!-- mode determines which support services and additional nodes are launched -->
+	<arg name="mode" default="robot"/>
 
-	<!-- <arg name="robot_running" default="true"/>
-	<arg name="simulate_robot_running" default="false"/>
-	<arg name="scs_running" default="false"/> -->
+	<!-- if running on robot, no need to simulate robot running -->
+	<arg if="$(eval mode == 'robot')" name="robot_running" value="true"/>
+	<arg if="$(eval mode == 'robot')" name="simulate_robot_running" value="false"/>
+	<!-- if testing with SCS, initialize params to simulate robot running-->
+	<arg if="$(eval mode == 'scs')" name="robot_running" value="false"/>
+	<arg if="$(eval mode == 'scs')" name="simulate_robot_running" value="true"/>
+	<!-- if running only in RViz without robot or SCS, do not simulate robot running and use default MoveIt demo -->
+	<arg if="$(eval mode == 'rviz')" name="robot_running" value="false"/>
+	<arg if="$(eval mode == 'rviz')" name="simulate_robot_running" value="false"/>
 
 	<arg name="allow_sensors" default="true"/>
 
@@ -40,6 +41,8 @@
 			<arg name="allow_sensors" value="$(arg allow_sensors)"/>
 			<arg name="use_rviz" value="$(arg use_rviz)"/>
 		</include>
+		<!-- launch MoveIt collision detector and collision modification services for Val -->
+		<include file="$(find val_moveit_planner_executor)/launch/moveit_collision_detector.launch"/>
 	</group>
 
 	<!-- robot is not running, may need to launch additional support nodes -->
@@ -48,17 +51,17 @@
 		<group if="$(arg simulate_robot_running)">
 			<!-- load robot descriptions to simulate descriptions on ros param server when Val is running -->
 			<include file="$(find val_moveit_config)/launch/test_robot_descriptions_NOT_ON_CONSOLE.launch"/>
+			<!-- launch node to filter joint states -->
+			<include file="$(find val_moveit_planner_executor)/launch/moveit_filter_joint_states_node.launch"/>
 			<!-- launch robot_demo in val_moveit_config -->
 			<include file="$(find val_moveit_config)/launch/robot_demo.launch">
 				<arg name="allow_sensors" value="$(arg allow_sensors)"/>
 				<arg name="use_rviz" value="$(arg use_rviz)"/>
 			</include>
-			<!-- if SCS is running, need to filter joint states-->
-			<group if="$(arg scs_running)">
-				<!-- launch node to filter joint states -->
-				<include file="$(find val_moveit_planner_executor)/launch/moveit_filter_joint_states_node.launch"/>
-			</group>
+			<!-- launch MoveIt collision detector and collision modification services for Val -->
+			<include file="$(find val_moveit_planner_executor)/launch/moveit_collision_detector.launch"/>
 		</group>
+
 		<!-- do not pretend robot is running -->
 		<group unless="$(arg simulate_robot_running)">
 			<!-- launch regular demo in val_moveit_config; loads robot descriptions itself -->
@@ -76,8 +79,5 @@
 
 	<!-- launch IHMC message interface node -->
 	<include file="$(find ihmc_msg_interface)/ihmc_launch/ihmc_interface_node.launch"/>
-
-	<!-- launch MoveIt collision detector and collision modification services for Val -->
-	<include file="$(find val_moveit_planner_executor)/launch/moveit_collision_detector.launch"/>
 
 </launch>
