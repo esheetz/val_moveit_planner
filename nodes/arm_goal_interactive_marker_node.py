@@ -66,6 +66,8 @@ class ArmGoalInteractiveMarkerNode:
 
         # internal planning params
         self.curr_arm_name = None
+        self.pos_tolerance = 0.01
+        self.ang_tolerance = 0.01
         self.arm_waypoints = []
         self.max_cart_step = 0.1
         self.max_config_step = 5.0
@@ -222,7 +224,7 @@ class ArmGoalInteractiveMarkerNode:
 
     def initialize_menu_handler(self):
         # add items to menu handler
-        self.setup_menu_handler(closest_arm_checked=True, waypoints_checked=False)
+        self.setup_menu_handler(closest_arm_checked=False, waypoints_checked=False)
 
         return
 
@@ -273,10 +275,14 @@ class ArmGoalInteractiveMarkerNode:
 
     def param_reconfigure_callback(self, config, level):
         # take params from reconfigure request and store them internally
+        self.pos_tolerance = config.pos_tolerance
+        self.ang_tolerance = config.ang_tolerance
         self.max_cart_step = config.max_cartesian_step
         self.max_config_step = config.max_configuration_step
 
-        rospy.loginfo("[%s] Reconfigured max Cartesian step to be %f (m) and max configuration step to be %f (radians)" %
+        rospy.loginfo("[%s] For kinematic paths, reconfigured position tolerance to be %f and angular tolerance to be %f" %
+                      (self.node_name, self.pos_tolerance, self.ang_tolerance))
+        rospy.loginfo("[%s] For Cartesian paths, reconfigured max Cartesian step to be %f (m) and max configuration step to be %f (radians)" %
                       (self.node_name, self.max_cart_step, self.max_config_step))
 
         return config
@@ -334,6 +340,8 @@ class ArmGoalInteractiveMarkerNode:
                 res = self.moveit_plan_client(planning_arm,
                                               True,
                                               plan_time,
+                                              self.pos_tolerance,
+                                              self.ang_tolerance,
                                               pose_msg)
             except rospy.ServiceException as e:
                 rospy.logwarn("[%s] Plan to arm goal service call failed: %s" % self.node_name, e)

@@ -2,9 +2,14 @@ int32 LEFT_ARM = 0
 int32 RIGHT_ARM = 1
 int32 ASSIGN_CLOSEST_ARM = 2
 
+float64 DEFAULT_POS_TOLERANCE = 0.01
+float64 DEFAULT_ANG_TOLERANCE = 0.01
+
 int32 planning_group_arm
 bool collision_aware_planning
 float64 allowed_planning_time
+float64 goal_pos_tolerance
+float64 goal_ang_tolerance
 geometry_msgs/PoseStamped arm_goal_pose
 
 ---

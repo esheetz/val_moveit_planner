@@ -161,7 +161,7 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
         planning_frame = move_group_interface_rarm_.getPlanningFrame();
     }
 
-    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan for %s joing group with end-effector %s in %s frame", motion_plan_req.group_name.c_str(), ee_name.c_str(), planning_frame.c_str());
+    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan for %s joint group with end-effector %s in %s frame", motion_plan_req.group_name.c_str(), ee_name.c_str(), planning_frame.c_str());
 
     // ***** PROCESS REQUESTED COLLISION AWARENESS *****
 
@@ -188,6 +188,38 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
 
     ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan in %f seconds or less", motion_plan_req.allowed_planning_time);
 
+    // ***** PROCESS REQUESTED GOAL TOLERANCES *****
+
+    // initialize tolerances
+    double pos_tol = 0.0;
+    double ang_tol = 0.0;
+
+    // set position tolerance
+    if( req.goal_pos_tolerance != 0.0 ) {
+        // non-default tolerance requested
+        pos_tol = req.goal_pos_tolerance;
+    }
+    else { // req.goal_pos_tolerance == 0.0
+        // set default tolerance
+        pos_tol = req.DEFAULT_POS_TOLERANCE;
+    }
+
+    // set angular tolerance
+    if( req.goal_ang_tolerance != 0.0 ) {
+        // non-default tolerance requested
+        ang_tol = req.goal_ang_tolerance;
+    }
+    else { // req.goal_ang_tolerance == 0.0
+        // set default tolerance
+        ang_tol = req.DEFAULT_ANG_TOLERANCE;
+    }
+
+    // set position and angular tolerances
+    std::vector<double> tolerance_pos(3, pos_tol);
+    std::vector<double> tolerance_ang(3, ang_tol);
+
+    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting goal with position tolerance %f and angular tolerance %f", pos_tol, ang_tol);
+
     // ***** PROCESS REQUESTED ARM GOAL POSE *****
 
     // initialized transformed world pose
@@ -204,10 +236,6 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
         res.success = false;
         return true; // service communication succeeded
     }
-
-    // set position and angular tolerances
-    std::vector<double> tolerance_pos(3, 0.01);
-    std::vector<double> tolerance_ang(3, 0.01);
     
     // set target pose as a goal constraint
     moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints(ee_name, arm_goal_world, tolerance_pos, tolerance_ang);
@@ -237,7 +265,7 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
                  motion_plan_res.planning_time);
     }
     else {
-        ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan");
+        ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan; error code %d", motion_plan_res.error_code.val);
         // publish message for safety reporter
         publishSafetyReportNoPlanFound(motion_plan_req.group_name, req.arm_goal_pose);
         // could not find plan, set response success to false
@@ -323,7 +351,7 @@ bool MoveItPlannerExecutorServerNode::planToArmWaypointsCallback(val_moveit_plan
         planning_frame = move_group_interface_rarm_.getPlanningFrame();
     }
 
-    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan for %s joing group with end-effector %s in %s frame", cart_plan_srv.request.group_name.c_str(), ee_name.c_str(), planning_frame.c_str());
+    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting plan for %s joint group with end-effector %s in %s frame", cart_plan_srv.request.group_name.c_str(), ee_name.c_str(), planning_frame.c_str());
 
     // ***** PROCESS REQUESTED WAYPOINTS *****
 
@@ -409,7 +437,7 @@ bool MoveItPlannerExecutorServerNode::planToArmWaypointsCallback(val_moveit_plan
         }
     }
     else {
-        ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan");
+        ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan; error code %d", motion_plan_res.error_code.val);
         // publish message for safety reporter
         publishSafetyReportNoPlanFound(cart_plan_srv.request.group_name, req.arm_waypoints[num_waypoints-1]);
         // could not find plan, set response success to false
