@@ -5,7 +5,7 @@ Emily Sheetz, Winter 2023
 """
 
 import rospy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Vector3
 from visualization_msgs.msg import InteractiveMarkerFeedback, InteractiveMarkerUpdate, InteractiveMarker, InteractiveMarkerControl, Marker
 from moveit_msgs.msg import RobotTrajectory
 
@@ -334,14 +334,26 @@ class ArmGoalInteractiveMarkerNode:
             pose_msg.header = marker.header
             pose_msg.pose = marker.pose
 
+            # create position tolerance
+            pos_tol = Vector3()
+            pos_tol.x = self.pos_tolerance
+            pos_tol.y = self.pos_tolerance
+            pos_tol.z = self.pos_tolerance
+
+            # create angular tolerance
+            ang_tol = Vector3()
+            ang_tol.x = self.ang_tolerance
+            ang_tol.y = self.ang_tolerance
+            ang_tol.z = self.ang_tolerance
+
             # try calling plan service
             try:
                 # request plan based on marker pose
                 res = self.moveit_plan_client(planning_arm,
                                               True,
                                               plan_time,
-                                              self.pos_tolerance,
-                                              self.ang_tolerance,
+                                              pos_tol,
+                                              ang_tol,
                                               pose_msg)
             except rospy.ServiceException as e:
                 rospy.logwarn("[%s] Plan to arm goal service call failed: %s" % self.node_name, e)

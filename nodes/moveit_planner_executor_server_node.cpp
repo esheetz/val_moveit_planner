@@ -191,34 +191,21 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
     // ***** PROCESS REQUESTED GOAL TOLERANCES *****
 
     // initialize tolerances
-    double pos_tol = 0.0;
-    double ang_tol = 0.0;
+    std::vector<double> pos_tol(3, 0.0);
+    std::vector<double> ang_tol(3, 0.0);
 
-    // set position tolerance
-    if( req.goal_pos_tolerance != 0.0 ) {
-        // non-default tolerance requested
-        pos_tol = req.goal_pos_tolerance;
-    }
-    else { // req.goal_pos_tolerance == 0.0
-        // set default tolerance
-        pos_tol = req.DEFAULT_POS_TOLERANCE;
-    }
+    // set position tolerance (if not initialized, set to default)
+    pos_tol[0] = (req.goal_pos_tolerance.x != 0.0) ? req.goal_pos_tolerance.x : req.DEFAULT_POS_TOLERANCE;
+    pos_tol[1] = (req.goal_pos_tolerance.y != 0.0) ? req.goal_pos_tolerance.y : req.DEFAULT_POS_TOLERANCE;
+    pos_tol[2] = (req.goal_pos_tolerance.z != 0.0) ? req.goal_pos_tolerance.z : req.DEFAULT_POS_TOLERANCE;
 
-    // set angular tolerance
-    if( req.goal_ang_tolerance != 0.0 ) {
-        // non-default tolerance requested
-        ang_tol = req.goal_ang_tolerance;
-    }
-    else { // req.goal_ang_tolerance == 0.0
-        // set default tolerance
-        ang_tol = req.DEFAULT_ANG_TOLERANCE;
-    }
+    // set angular tolerance (if not initialized, set to default)
+    ang_tol[0] = (req.goal_ang_tolerance.x != 0.0) ? req.goal_ang_tolerance.x : req.DEFAULT_ANG_TOLERANCE;
+    ang_tol[1] = (req.goal_ang_tolerance.y != 0.0) ? req.goal_ang_tolerance.y : req.DEFAULT_ANG_TOLERANCE;
+    ang_tol[2] = (req.goal_ang_tolerance.z != 0.0) ? req.goal_ang_tolerance.z : req.DEFAULT_ANG_TOLERANCE;
 
-    // set position and angular tolerances
-    std::vector<double> tolerance_pos(3, pos_tol);
-    std::vector<double> tolerance_ang(3, ang_tol);
-
-    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting goal with position tolerance %f and angular tolerance %f", pos_tol, ang_tol);
+    ROS_INFO("[MoveIt Planner Executor Server Node] Requesting goal with position tolerance xyz=(%f, %f, %f) and angular tolerance rpy=(%f, %f, %f)",
+             pos_tol[0], pos_tol[1], pos_tol[2], ang_tol[0], ang_tol[1], ang_tol[2]);
 
     // ***** PROCESS REQUESTED ARM GOAL POSE *****
 
@@ -238,7 +225,7 @@ bool MoveItPlannerExecutorServerNode::planToArmGoalCallback(val_moveit_planner_e
     }
     
     // set target pose as a goal constraint
-    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints(ee_name, arm_goal_world, tolerance_pos, tolerance_ang);
+    moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints(ee_name, arm_goal_world, pos_tol, ang_tol);
     
     // add requested pose as goal constraint
     motion_plan_req.goal_constraints.push_back(pose_goal);
