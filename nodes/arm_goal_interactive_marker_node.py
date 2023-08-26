@@ -5,7 +5,7 @@ Emily Sheetz, Winter 2023
 """
 
 import rospy
-from geometry_msgs.msg import PoseStamped, Vector3
+from geometry_msgs.msg import PoseStamped, TransformStamped, Vector3
 from visualization_msgs.msg import InteractiveMarkerFeedback, InteractiveMarkerUpdate, InteractiveMarker, InteractiveMarkerControl, Marker
 from moveit_msgs.msg import RobotTrajectory
 
@@ -32,6 +32,7 @@ class ArmGoalInteractiveMarkerNode:
         self.moveit_planner_executor_plan_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/plan_to_arm_goal"
         self.moveit_planner_executor_plan_waypoints_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/plan_to_arm_waypoints"
         self.moveit_planner_executor_execute_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/execute_trajectory"
+        self.commanded_poses_topic_name = "/commanded_ee_poses"
         self.left_arm_name = "EE:goal_leftPalm"
         self.right_arm_name = "EE:goal_rightPalm"
         self.arm_names = [self.left_arm_name, self.right_arm_name]
@@ -41,6 +42,9 @@ class ArmGoalInteractiveMarkerNode:
 
         # initialize MoveIt IM update subscriber
         self.moveit_im_sub = rospy.Subscriber(self.moveit_im_topic_name, InteractiveMarkerUpdate, self.moveit_im_feedback_callback)
+
+        # initialize commanded pose publisher
+        self.commanded_poses_pub = rospy.Publisher(self.commanded_poses_topic_name, TransformStamped, queue_size=1)
 
         # initialize val_moveit_planner_executor services
         rospy.loginfo("[%s] Waiting for service plan_to_arm_goal..." % self.node_name)
@@ -362,6 +366,8 @@ class ArmGoalInteractiveMarkerNode:
             # check success
             if res.success:
                 rospy.loginfo("[%s] Planning successful!" % self.node_name)
+                # publish commanded pose
+                self.publish_commanded_pose(pose_msg, planning_arm)
             else:
                 rospy.logwarn("[%s] Planning failed :'(" % self.node_name)
 
@@ -554,6 +560,28 @@ class ArmGoalInteractiveMarkerNode:
             # update menu and number of waypoints
             self.setup_menu_handler(closest_arm_checked=self.curr_closest_arm_checked_state,
                                     waypoints_checked=self.curr_waypoints_checked_state)
+
+        return
+
+    def publish_commanded_pose(self, pose_msg, planning_arm):
+        # create transform message from pose message
+        tf_msg = TransformStamped()
+        tf_msg.header = pose_msg.header
+        tf_msg.transform.translation.x = pose_msg.pose.position.x
+        tf_msg.transform.translation.y = pose_msg.pose.position.y
+        tf_msg.transform.translation.z = pose_msg.pose.position.z
+        tf_msg.transform.rotation = pose_msg.pose.orientation
+
+        # set child frame
+        if planning_arm == PlanToArmGoalRequest.LEFT_ARM:
+            tf_msg.child_frame_id = "leftPalm"
+        elif planning_arm == PlanToArmGoalRequest.RIGHT_ARM:
+            tf_msg.child_frame_id = "rightPalm"
+        else: # planning_arm == PlanToArmGoalRequest.ASSIGN_CLOSEST_ARM
+            tf_msg.child_frame_id = "closest_arm"
+
+        # publish commanded pose message
+        self.commanded_poses_pub.publish(tf_msg)
 
         return
 
