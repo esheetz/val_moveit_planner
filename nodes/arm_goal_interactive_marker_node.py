@@ -289,6 +289,12 @@ class ArmGoalInteractiveMarkerNode:
         rospy.loginfo("[%s] For Cartesian paths, reconfigured max Cartesian step to be %f (m) and max configuration step to be %f (radians)" %
                       (self.node_name, self.max_cart_step, self.max_config_step))
 
+        # reset MoveIt IM connection
+        self.moveit_im_topic_name = config.moveit_im_update_topic
+        self.moveit_im_sub = rospy.Subscriber(self.moveit_im_topic_name, InteractiveMarkerUpdate, self.moveit_im_feedback_callback)
+        rospy.loginfo("[%s] Reset IM update connection to listen to topic %s" %
+                      (self.node_name, self.moveit_im_topic_name))
+
         return config
 
     def process_feedback(self, feedback):
