@@ -28,7 +28,7 @@ class ArmGoalInteractiveMarkerNode:
         self.node_name = "Hacky MoveIt Arm Goal IM Node"
         self.im_server_name = "hacky_moveit_arm_goals"
         self.int_marker_name = "Hacky MoveIt Arm Goal Target"
-        self.moveit_im_topic_name = "/rviz_moveit_motion_planning_display/robot_interaction_interactive_marker_topic/update"
+        self.moveit_im_topic_name = "/moveit/rviz_moveit_motion_planning_display/robot_interaction_interactive_marker_topic/update"
         self.moveit_planner_executor_plan_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/plan_to_arm_goal"
         self.moveit_planner_executor_plan_waypoints_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/plan_to_arm_waypoints"
         self.moveit_planner_executor_execute_service_name = "/ValkyrieMoveItPlannerExecutorServerNode/execute_trajectory"
