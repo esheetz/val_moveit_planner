@@ -136,7 +136,7 @@ class ArmGoalInteractiveMarkerNode:
         int_marker.controls.append(move_control)
 
         # set interaction mode
-        int_marker.controls[0].interaction_mode = InteractiveMarkerControl.MOVE_3D
+        int_marker.controls[0].interaction_mode = InteractiveMarkerControl.MENU #MOVE_3D
 
         # get 6D controls
         move_controls = self.getMoveMarkerControl()
@@ -147,7 +147,7 @@ class ArmGoalInteractiveMarkerNode:
         full_control.interaction_mode = InteractiveMarkerControl.BUTTON
         full_control.always_visible = True
         int_marker.controls.append(full_control)
-        int_marker.controls += move_controls + rotate_controls
+        #int_marker.controls += move_controls + rotate_controls
 
         # add interactive marker to server
         self.im_server.insert(int_marker, self.process_feedback)
