@@ -424,7 +424,7 @@ bool MoveItPlannerExecutorServerNode::planToArmWaypointsCallback(val_moveit_plan
         }
     }
     else {
-        ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan; error code %d", motion_plan_res.error_code.val);
+        ROS_WARN("[MoveIt Planner Executor Server Node] Could not find plan; error code %d", cart_plan_srv.response.error_code.val);
         // publish message for safety reporter
         publishSafetyReportNoPlanFound(cart_plan_srv.request.group_name, req.arm_waypoints[num_waypoints-1]);
         // could not find plan, set response success to false
